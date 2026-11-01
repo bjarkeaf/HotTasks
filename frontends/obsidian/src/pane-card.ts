@@ -330,6 +330,9 @@ function buildDetail(ctx: Ctx, item: Item): HTMLElement {
   info.addEventListener("click", (e) => {
     e.stopPropagation();
     if ((e.target as HTMLElement).closest("a")) return;
+    // Dragging across the text to copy it is not a request to edit.
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && info.contains(sel.anchorNode)) return;
     // A click inside the field being edited only places the caret. Clearing it here would empty the edit and save an empty block.
     if (info.classList.contains(cx("live"))) return;
     info.replaceChildren();

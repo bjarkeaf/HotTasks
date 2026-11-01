@@ -257,6 +257,9 @@ body.theme-dark {
 .hottasks-detail .hottasks-editable.hottasks-empty { color: var(--text-faint); font-style: italic; }
 .hottasks-info { white-space: pre-wrap; line-height: 1.5; padding: 1px 2px; cursor: text; border-bottom: 1px dashed transparent; }
 .hottasks-info p { margin: 0; }
+.hottasks-infoview { white-space: normal; user-select: text; cursor: text; }
+.hottasks-infoview p, .hottasks-infoview div { margin: 0; }
+.hottasks-detail .hottasks-ev > span, .hottasks-row .hottasks-last { user-select: text; }
 .hottasks-info a { cursor: pointer; }
 .hottasks-info:hover { border-bottom-color: var(--text-muted); }
 .hottasks-info.hottasks-empty { color: var(--text-muted); font-style: italic; border-bottom-color: var(--background-modifier-border); }
