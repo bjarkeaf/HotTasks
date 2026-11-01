@@ -15,7 +15,7 @@ type Ctx = MarkdownView | MarkdownFileInfo;
 type Run = (store: Store, id: string, name: string) => void;
 
 export default class HotTasksPlugin extends Plugin implements PaneHost {
-  override settings: Settings = withDefaults({ folder: "0_Tasks" });
+  override settings: Settings = withDefaults({ folder: "Tasks" });
   prefs: Prefs = readPrefs(undefined);
   store: Store | undefined;
   private unsubscribe: (() => void) | undefined;
@@ -24,7 +24,7 @@ export default class HotTasksPlugin extends Plugin implements PaneHost {
   override async onload(): Promise<void> {
     const data = (await this.loadData()) as (Partial<Settings> & Partial<Prefs>) | null;
     this.prefs = readPrefs(data);
-    this.settings = withDefaults({ folder: "0_Tasks", ...pickSettings(data) });
+    this.settings = withDefaults({ folder: "Tasks", ...pickSettings(data) });
     await this.openStore();
 
     this.registerView(VIEW_TYPE, (leaf) => new HotTasksPane(leaf, this));
