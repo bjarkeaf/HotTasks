@@ -31,7 +31,7 @@ function source(el: HTMLElement, mark: HTMLElement, d: Drag): void {
   el.draggable = true;
   el.addEventListener("dragstart", (e) => {
     // A field being edited in place must keep its text selection.
-    if (el.querySelector(`input, .${cx("live")}`)) return e.preventDefault();
+    if (el.querySelector(`input:not([type="checkbox"]), .${cx("live")}`)) return e.preventDefault();
     e.stopPropagation();
     drag = d;
     mark.classList.add(cx("dragging"));
