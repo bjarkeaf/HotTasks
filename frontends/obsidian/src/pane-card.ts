@@ -36,6 +36,15 @@ export function takeRefocus(): string | null {
 }
 const SYSTEM_EVENT = /^(Touched|Done|Archived|Lane: .+|Status: .+)$/;
 
+/** Tasks ticked today stay visible only while that item has the focus, so a wrong tick can be undone. */
+let focused: string | null = null;
+export function focusItem(id: string | null): void {
+  focused = id;
+}
+function showsDone(item: Item, open: boolean): boolean {
+  return open || item.id === focused;
+}
+
 /** The doc may have been replaced by a sweep or reload since the row was drawn, so look the item up again. */
 function withItem(store: Store, id: string, fn: (item: Item) => void): void {
   const found = findItem(store.doc, id);
@@ -198,7 +207,7 @@ function doneRow(ctx: Ctx, item: Item, ev: Event, i: number, cls: string, parent
 
 function buildClosedTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
   const id = item.id ?? "";
-  const done = doneToday(item, ctx.now);
+  const done = showsDone(item, false) ? doneToday(item, ctx.now) : [];
   const last = newest(item);
   const lastLine = () => {
     if (!last?.at) return;
@@ -231,7 +240,10 @@ function buildClosedTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
   const list = h("div", "tasks closed", undefined, main);
   item.tasks.forEach((_, i) => {
     const row = h("div", "task tk", undefined, list);
-    checkbox(row, false, "Done, logs an event", () => ctx.actions.do((s) => void completeTask(s.doc, id, i)));
+    checkbox(row, false, "Done, logs an event", () => {
+      focusItem(id);
+      ctx.actions.do((s) => void completeTask(s.doc, id, i));
+    });
     taskText(ctx, item, i, row);
   });
   for (const { ev, i } of done) doneRow(ctx, item, ev, i, "task tk pending", list);

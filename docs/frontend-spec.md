@@ -91,7 +91,7 @@ Settled on the pane mock. The words used in the interface are the spec's: Workst
 
 **Tasks**
 
-- Ticking a task's checkbox completes it. It stays in the list ticked and struck through until midnight, then appears only in Events. Unticking reopens it.
+- Ticking a task's checkbox completes it and writes the `Done:` event. It stays in the list ticked and struck through only while that item keeps the focus (it is open, or it was the last item ticked), so a wrong tick can be undone. Once the focus moves to another item the ticked task disappears from the list and lives on in Events. Unticking reopens it.
 - A task can be ticked from a closed row as well as an open one. Each task has a cross to remove it without a record.
 - The add-task line has a live checkbox: ticking it logs the typed text as done at once, without it ever being an open task.
 

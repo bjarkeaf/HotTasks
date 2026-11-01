@@ -5,7 +5,7 @@ import { addWorkstream, findItem, setLane, touch } from "@hottasks/core";
 import { HistoryModal } from "./modals";
 import { Actions } from "./pane-actions";
 import type { Ctx } from "./pane-card";
-import { takeRefocus } from "./pane-card";
+import { focusItem, takeRefocus } from "./pane-card";
 import { closeFloating, cx, dropdown, h, icon, inputPopover, isEditing, LIMITS, menuAt, menuHeading, menuItem, onFloatingDismiss, onOutsideMouseDown, onSwallowedClick, setRendering } from "./pane-edit";
 import { renderList, renderSummary } from "./pane-render";
 import type { PaneHost } from "./pane-state";
@@ -133,6 +133,7 @@ export class HotTasksPane extends ItemView {
       toggle: (id) => {
         const { prefs } = this.host;
         prefs.open = prefs.open === id ? null : id;
+        focusItem(prefs.open);
         this.host.savePrefs();
         this.render();
       }
