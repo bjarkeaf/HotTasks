@@ -1,0 +1,27 @@
+# Agent and editor files
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.vscode/
+.idea/
+*.scratch.md
+scratch/
+
+# Build
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Local data and secrets
+.env
+*.local
+tasks.md
+tasks-archive.md
+history/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
