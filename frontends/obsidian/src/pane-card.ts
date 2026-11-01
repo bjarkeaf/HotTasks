@@ -354,11 +354,7 @@ function buildDetail(ctx: Ctx, item: Item): HTMLElement {
   }
 
   const events = byTime(item);
-  if (events.length === 0) {
-    const none = h("div", "", "none yet", detail);
-    none.style.color = "var(--text-faint)";
-    return detail;
-  }
+  if (events.length === 0) return detail;
   const all = ctx.allEvents.has(id);
   const shown = (all ? events : events.slice(-4)).reverse();
   for (const { ev, i } of shown) buildEventRow(ctx, item, ev, i, detail);
