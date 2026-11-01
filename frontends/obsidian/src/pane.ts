@@ -193,6 +193,12 @@ export class HotTasksPane extends ItemView {
       this.render();
     };
     pane.addEventListener("mousedown", (e) => dropFocus(e.target as Element), true);
+    pane.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey && !isEditing()) {
+        e.preventDefault();
+        new Notice(this.actions.undo() ? "Undone" : "Nothing to undo");
+      }
+    });
     pane.addEventListener("focusout", () => {
       // A redraw removes the focused element and fires this too, so wait and see where the focus really went.
       window.setTimeout(() => {

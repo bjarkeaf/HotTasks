@@ -125,7 +125,8 @@ export function liveEdit(el: HTMLElement, o: LiveOptions): void {
   el.contentEditable = "plaintext-only";
   if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
   el.focus();
-  selectAll(el);
+  // A one-line field is usually retyped, so it is selected. A block of text is usually extended, so the caret goes to the end.
+  selectAll(el, o.multiline);
   let done = false;
   const finish = (save: boolean) => {
     if (done) return;
