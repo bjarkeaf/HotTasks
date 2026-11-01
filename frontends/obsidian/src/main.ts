@@ -30,6 +30,7 @@ export default class HotTasksPlugin extends Plugin implements PaneHost {
     this.registerView(VIEW_TYPE, (leaf) => new HotTasksPane(leaf, this));
     this.addRibbonIcon("flame", "Open HotTasks pane", () => void this.openPane());
     this.addCommand({ id: "open-pane", name: "Open HotTasks pane", callback: () => void this.openPane() });
+    this.addCommand({ id: "open-pane-tab", name: "Open HotTasks pane as tab", callback: () => void this.openPane("tab") });
 
     this.addSettingTab(new HotTasksSettingTab(this.app, this));
     this.registerEditorExtension(heatDecorations(() => this.store));
@@ -116,12 +117,12 @@ export default class HotTasksPlugin extends Plugin implements PaneHost {
     }
   }
 
-  /** Shows the pane in the right sidebar, opening it first if needed. */
-  private async openPane(): Promise<void> {
+  /** Shows the pane, in the right sidebar by default or as a tab in the main area. */
+  private async openPane(where: "sidebar" | "tab" = "sidebar"): Promise<void> {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE)[0];
     if (!leaf) {
-      leaf = workspace.getRightLeaf(false) ?? undefined;
+      leaf = (where === "tab" ? workspace.getLeaf("tab") : workspace.getRightLeaf(false)) ?? undefined;
       await leaf?.setViewState({ type: VIEW_TYPE, active: true });
     }
     if (leaf) await workspace.revealLeaf(leaf);
