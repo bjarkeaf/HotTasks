@@ -119,7 +119,10 @@ describe("parse rules", () => {
 
 describe("legacy notes", () => {
   const legacy = existsSync(fixtures) ? readdirSync(fixtures).filter((f) => f.startsWith("legacy-")) : [];
-  it.skipIf(legacy.length === 0).each(legacy)("%s parses and is stable after one normalisation", (name) => {
+  if (legacy.length === 0) {
+    it.skip("no legacy fixtures present", () => {});
+  }
+  it.each(legacy)("%s parses and is stable after one normalisation", (name) => {
     const text = readFileSync(join(fixtures, name), "utf8");
     const once = serialize(parse(text, { today: "2026-11-01" }));
     const twice = serialize(parse(once, { today: "2026-11-01" }));
