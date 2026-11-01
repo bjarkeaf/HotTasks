@@ -32,3 +32,6 @@ coverage/
 
 # Real task sections from private notes, used by local tests only
 core/test/fixtures/legacy-*.md
+
+# Internal connector notes with NVIDIA hostnames, names and paths, kept out of the public repo
+docs/connectors/

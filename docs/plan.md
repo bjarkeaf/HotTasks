@@ -32,7 +32,7 @@
 
 ## 5. Connectors
 
-- Agile: status sync for MCO, ECO, NPR, DEV using the local warehouse access
+- Agile: status sync for MCO, ECO, NPR, DEV through the read-only agile-tools `brief` command, see docs/connectors/agile-status.md (local only)
 - Agile: live signer list as details
 - Windchill: status sync once a read path exists
 
