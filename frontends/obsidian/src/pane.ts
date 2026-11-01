@@ -193,12 +193,18 @@ export class HotTasksPane extends ItemView {
       this.render();
     };
     pane.addEventListener("mousedown", (e) => dropFocus(e.target as Element), true);
-    pane.addEventListener("keydown", (e) => {
-      if (e.key.toLowerCase() === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey && !isEditing()) {
-        e.preventDefault();
-        new Notice(this.actions.undo() ? "Undone" : "Nothing to undo");
-      }
-    });
+    // Ctrl+Z undoes the last pane change whenever the pane is the active view, even if nothing inside it has keyboard focus.
+    this.registerDomEvent(document, "keydown", (e) => {
+      if (e.key.toLowerCase() !== "z" || !(e.ctrlKey || e.metaKey) || e.shiftKey || isEditing()) return;
+      const active = document.activeElement;
+      const inPane = active instanceof Node && pane.contains(active);
+      const paneActive = this.app.workspace.activeLeaf === this.leaf;
+      if (!inPane && !paneActive) return;
+      if (active instanceof HTMLElement && (active.isContentEditable || active.tagName === "INPUT" || active.tagName === "TEXTAREA") && !inPane) return;
+      e.preventDefault();
+      e.stopPropagation();
+      new Notice(this.actions.undo() ? "Undone" : "Nothing to undo");
+    }, true);
     pane.addEventListener("focusout", () => {
       // A redraw removes the focused element and fires this too, so wait and see where the focus really went.
       window.setTimeout(() => {

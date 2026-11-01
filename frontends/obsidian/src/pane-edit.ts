@@ -128,6 +128,7 @@ export function liveEdit(el: HTMLElement, o: LiveOptions): void {
   // A one-line field is usually retyped, so it is selected. A block of text is usually extended, so the caret goes to the end.
   selectAll(el, o.multiline);
   let done = false;
+  let explicit = false;
   const finish = (save: boolean) => {
     if (done) return;
     done = true;
@@ -135,9 +136,15 @@ export function liveEdit(el: HTMLElement, o: LiveOptions): void {
     activeFinish = null;
     el.contentEditable = "false";
     el.classList.remove(cx("live"));
-    const v = o.multiline
+    let v = o.multiline
       ? el.innerText.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim()
       : (el.textContent ?? "").replace(/\s+/g, " ").trim();
+    if (o.multiline && v === "" && (el.textContent ?? "").trim() !== "") v = (el.textContent ?? "").trim();
+    // A block of text is never emptied by a click-away. Clearing it takes Ctrl+Enter on the empty field.
+    if (save && o.multiline && v === "" && original !== "" && !explicit) {
+      console.warn("HotTasks: refused to save an empty block", { connected: el.isConnected, text: el.textContent });
+      save = false;
+    }
     if (save && v !== original) o.onCommit(v);
     else o.onEnd();
   };
@@ -150,6 +157,7 @@ export function liveEdit(el: HTMLElement, o: LiveOptions): void {
   el.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (!o.multiline || e.ctrlKey)) {
       e.preventDefault();
+      explicit = true;
       finish(true);
     }
     if (e.key === "Escape") finish(false);
