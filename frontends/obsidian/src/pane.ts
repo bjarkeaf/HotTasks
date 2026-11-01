@@ -128,6 +128,7 @@ export class HotTasksPane extends ItemView {
       now: new Date(),
       opts: { thresholds: { hotMs: s.hotMs, warmMs: s.warmMs }, terminalStatuses: s.terminalStatuses },
       allEvents: this.allEvents,
+      component: this,
       draw: () => this.render(),
       toggle: (id) => {
         const { prefs } = this.host;

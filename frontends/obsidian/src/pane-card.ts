@@ -1,4 +1,5 @@
-import { Notice } from "obsidian";
+import { MarkdownRenderer, Notice } from "obsidian";
+import type { Component } from "obsidian";
 import type { Event, HeatOptions, Item, Store, Workstream } from "@hottasks/core";
 import { findItem, addEvent, addTask, completeTask, editTask, formatAge, itemHeat, removeTask, reopenTask, setInfo, setLane, setStatus, timestampFromDate, timestampToMillis, touch } from "@hottasks/core";
 import type { Heat } from "@hottasks/core";
@@ -16,6 +17,8 @@ export interface Ctx {
   now: Date;
   opts: HeatOptions;
   allEvents: Set<string>;
+  /** Owner of rendered Markdown, so links and embeds are cleaned up with the view. */
+  component: Component;
   draw(): void;
   toggle(id: string): void;
 }
@@ -292,10 +295,14 @@ function buildDetail(ctx: Ctx, item: Item): HTMLElement {
   const detail = h("div", "detail");
   h("h4", "", "Info", detail);
   const lines = item.info.map((i) => i.text);
-  const info = h("div", lines.length ? "info editable" : "info editable empty", lines.length ? lines.join("\n") : "Anything worth keeping with this item", detail);
-  info.title = "Click to edit, one line per point";
+  const info = h("div", lines.length ? "info editable" : "info editable empty", lines.length ? undefined : "Anything worth keeping with this item", detail);
+  info.title = "Click to edit, one line per point. Links open on click.";
+  // Rendered as Markdown so links work. Each line is its own paragraph, matching one bullet per line in the file.
+  if (lines.length) void MarkdownRenderer.render(ctx.host.app, lines.join("\n\n"), info, ctx.store.tasksPath, ctx.component);
   info.addEventListener("click", (e) => {
     e.stopPropagation();
+    if ((e.target as HTMLElement).closest("a")) return;
+    info.replaceChildren();
     liveEdit(info, {
       value: lines.join("\n"),
       multiline: true,
