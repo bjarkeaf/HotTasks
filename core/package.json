@@ -1,0 +1,23 @@
+{
+  "name": "@hottasks/core",
+  "version": "0.0.0",
+  "description": "HotTasks backend: model, markup, heat, operations, archive",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

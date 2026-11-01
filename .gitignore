@@ -25,3 +25,7 @@ history/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Test output
+coverage/
+*.log
