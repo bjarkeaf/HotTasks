@@ -7,3 +7,5 @@ export * from "./settings.js";
 export * from "./ops.js";
 export * from "./archive.js";
 export * from "./history.js";
+export * from "./store.js";
+export { nodeFileSystem } from "./node-fs.js";

@@ -203,7 +203,7 @@ export function parse(text: string, options: ParseOptions = {}): Document {
   const eol: "\n" | "\r\n" = text.includes("\r\n") ? "\r\n" : "\n";
   const trailingNewline = text.endsWith("\n");
   const body = trailingNewline ? text.slice(0, text.length - eol.length) : text;
-  const lines = body === "" && trailingNewline ? [] : body.split(eol);
+  const lines = body === "" ? [] : body.split(eol);
 
   const nodes: Node[] = [];
   let context: Lane = "now";
