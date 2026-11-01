@@ -1,16 +1,16 @@
 body {
-  --hottasks-hot: #d9480f;
-  --hottasks-warm: #e8a317;
-  --hottasks-cold: #3b82c4;
+  --hottasks-hot: #c2654a;
+  --hottasks-warm: #c9a24f;
+  --hottasks-cold: #6b8fb3;
   --hottasks-parked: #8a8f98;
   --hottasks-terminal: #6b7280;
   --hottasks-unknown: #c4c8cf;
 }
 
 body.theme-dark {
-  --hottasks-hot: #ff7a45;
-  --hottasks-warm: #f5c04a;
-  --hottasks-cold: #6aa9e9;
+  --hottasks-hot: #b8674f;
+  --hottasks-warm: #b59a52;
+  --hottasks-cold: #5f83a6;
   --hottasks-parked: #9aa0a9;
   --hottasks-terminal: #8b929d;
   --hottasks-unknown: #4b5058;
