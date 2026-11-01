@@ -1,4 +1,4 @@
-import { MarkdownRenderer, Notice } from "obsidian";
+import { Notice } from "obsidian";
 import type { Component } from "obsidian";
 import type { Event, HeatOptions, Item, Store, Workstream } from "@hottasks/core";
 import { findItem, addEvent, addTask, completeTask, editTask, formatAge, itemHeat, removeTask, reopenTask, setInfo, setLane, setStatus, timestampFromDate, timestampToMillis, touch } from "@hottasks/core";
@@ -6,7 +6,7 @@ import type { Heat } from "@hottasks/core";
 import type { Actions } from "./pane-actions";
 import { itemSource } from "./pane-drag";
 import { editEvent, removeEvent } from "./pane-actions";
-import { LIMITS, confirmPopover, cx, fullTime, h, icon, isRendering, liveEdit, parseWhen, showTime } from "./pane-edit";
+import { LIMITS, alwaysEditable, confirmPopover, cx, fullTime, h, icon, isRendering, liveEdit, parseWhen, showTime } from "./pane-edit";
 import type { PaneHost } from "./pane-state";
 import { wsStyle } from "./pane-state";
 
@@ -322,28 +322,13 @@ function buildDetail(ctx: Ctx, item: Item): HTMLElement {
   const detail = h("div", "detail");
   h("h4", "", "Info", detail);
   const lines = item.info.map((i) => i.text);
-  const info = h("div", lines.length ? "info editable" : "info editable empty", lines.length ? undefined : "Anything worth keeping with this item", detail);
-  info.title = "Click to edit, one line per point. Links open on click.";
-  // Rendered as Markdown so links work. Each line is its own paragraph, matching one bullet per line in the file.
-  // The render is asynchronous. It gets its own child, so a render that lands after the click started editing cannot write into the edit field.
-  if (lines.length) void MarkdownRenderer.render(ctx.host.app, lines.join("\n\n"), h("div", "infoview", undefined, info), ctx.store.tasksPath, ctx.component);
-  info.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if ((e.target as HTMLElement).closest("a")) return;
-    // Dragging across the text to copy it is not a request to edit.
-    const sel = window.getSelection();
-    if (sel && !sel.isCollapsed && info.contains(sel.anchorNode)) return;
-    // A click inside the field being edited only places the caret. Clearing it here would empty the edit and save an empty block.
-    if (info.classList.contains(cx("live"))) return;
-    info.replaceChildren();
-    liveEdit(info, {
-      value: lines.join("\n"),
-      multiline: true,
-      placeholder: "One line per point",
-      onCommit: (v) =>
-        ctx.actions.do((s) => void setInfo(s.doc, id, v.split("\n").map((l) => l.trim()).filter((l) => l !== ""))),
-      onEnd: ctx.draw
-    });
+  // Always editable: the text is what is in the file, one line per bullet. Ctrl+click opens a link in it.
+  const info = h("div", "info", undefined, detail);
+  info.title = "One line per point. Ctrl+click opens a link. Ctrl+Enter or click away saves.";
+  alwaysEditable(info, {
+    value: lines.join("\n"),
+    placeholder: "Anything worth keeping with this item",
+    onCommit: (v) => ctx.actions.do((s) => void setInfo(s.doc, id, v.split("\n").map((l) => l.trim()).filter((l) => l !== "")))
   });
 
   h("h4", "", "Events", detail);

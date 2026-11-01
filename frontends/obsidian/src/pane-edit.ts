@@ -168,6 +168,81 @@ export function liveEdit(el: HTMLElement, o: LiveOptions): void {
   activeFinish = finish;
 }
 
+export interface FieldOptions {
+  value: string;
+  placeholder?: string;
+  onCommit: (value: string) => void;
+}
+
+const URL_IN_TEXT = /\[([^\]]*)\]\(([^)\s]+)\)|https?:\/\/[^\s)]+/g;
+
+/**
+ * A block that is always editable: click puts the caret where you clicked, the text is selectable, and the
+ * edit is saved when the focus leaves or on Ctrl+Enter. Escape restores the text. Ctrl+click opens a link.
+ */
+export function alwaysEditable(el: HTMLElement, o: FieldOptions): void {
+  el.textContent = o.value;
+  if (o.placeholder) el.dataset.placeholder = o.placeholder;
+  el.contentEditable = "plaintext-only";
+  if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
+  el.classList.add(cx("field"));
+  let original = o.value;
+  let active = false;
+  const finish = (save: boolean) => {
+    if (!active) return;
+    active = false;
+    editing = false;
+    activeFinish = null;
+    el.classList.remove(cx("live"));
+    const v = el.innerText.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+    if (save && v !== original) {
+      original = v;
+      o.onCommit(v);
+    } else if (!save) {
+      el.textContent = original;
+    }
+  };
+  el.addEventListener("focus", () => {
+    if (editing && !active) return;
+    active = true;
+    editing = true;
+    activeFinish = finish;
+    el.classList.add(cx("live"));
+  });
+  el.addEventListener("blur", () => {
+    if (isRendering()) return;
+    finish(true);
+  });
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      el.blur();
+    }
+    if (e.key === "Escape") {
+      finish(false);
+      el.blur();
+    }
+    e.stopPropagation();
+  });
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!e.ctrlKey && !e.metaKey) return;
+    const sel = getSelection();
+    if (!sel || !el.contains(sel.anchorNode)) return;
+    // Offset of the caret in the plain text, then the link whose span contains it.
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.setEnd(sel.anchorNode!, sel.anchorOffset);
+    const at = range.toString().length;
+    for (const m of el.innerText.matchAll(URL_IN_TEXT)) {
+      if (at >= m.index && at <= m.index + m[0].length) {
+        window.open(m[2] ?? m[0]);
+        return;
+      }
+    }
+  });
+}
+
 /** Registered on the document in the capture phase. A click elsewhere saves the edit first, then lands on what was clicked. */
 export function onOutsideMouseDown(e: MouseEvent): void {
   if (!activeFinish || e.composedPath().some((n) => n instanceof HTMLElement && n.classList.contains(cx("live")))) return;

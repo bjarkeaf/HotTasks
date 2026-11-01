@@ -315,3 +315,9 @@ body.theme-dark {
 .hottasks-dragging { opacity: .4; }
 .hottasks-dropline { height: 2px; background: var(--interactive-accent); margin: -1px 8px; border-radius: 1px; pointer-events: none; }
 .hottasks-group[draggable="true"] { cursor: grab; }
+
+/* Always-editable block: looks like text until it has the focus. */
+.hottasks-info.hottasks-field { white-space: pre-wrap; min-height: 1.5em; user-select: text; cursor: text; outline: none; border-bottom: 1px dashed transparent; }
+.hottasks-info.hottasks-field:hover { border-bottom-color: var(--background-modifier-border); }
+.hottasks-info.hottasks-field:focus { border-bottom: 1px solid var(--interactive-accent); }
+.hottasks-info.hottasks-field:empty::after { content: attr(data-placeholder); color: var(--text-muted); font-style: italic; pointer-events: none; }
