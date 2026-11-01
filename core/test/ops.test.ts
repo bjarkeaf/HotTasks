@@ -18,6 +18,9 @@ import {
   ensureIds,
   importBullet,
   move,
+  moveItemAfter,
+  moveWorkstream,
+  moveWorkstreamAfter,
   rename,
   setLane,
   setStatus,
@@ -377,6 +380,136 @@ describe("move", () => {
     expect(() => move(doc, "it-nope", undefined, 0)).toThrow(/Item not found/);
     expect(() => move(doc, "it-7x1a", "it-9q7d", 0)).toThrow(/Workstream not found/);
     expect(() => move(doc, "ws-k3f2", undefined, 0)).toThrow(/Item not found/);
+  });
+});
+
+const TWO = [
+  "# Tasks",
+  "",
+  "- Alpha ^ws-aaaa",
+  "\t- [ ] One ^it-0001",
+  "\t\t- @2026-10-01 09:00 Made",
+  "\t- [ ] Two ^it-0002",
+  "- Beta ^ws-bbbb",
+  "\t- [ ] Three ^it-0003",
+  "- Gamma ^ws-cccc",
+  "\t- [ ] Four ^it-0004",
+  ""
+].join("\n");
+
+function two() {
+  return parse(TWO, { today: "2026-11-01" });
+}
+
+describe("moveItemAfter", () => {
+  it("reorders within a workstream", () => {
+    const doc = two();
+    moveItemAfter(doc, "it-0001", "ws-aaaa", "it-0002");
+    expect(serialize(doc)).toBe(
+      TWO.replace(
+        "\t- [ ] One ^it-0001\n\t\t- @2026-10-01 09:00 Made\n\t- [ ] Two ^it-0002\n",
+        "\t- [ ] Two ^it-0002\n\t- [ ] One ^it-0001\n\t\t- @2026-10-01 09:00 Made\n"
+      )
+    );
+  });
+
+  it("puts the item first when afterId is null", () => {
+    const doc = two();
+    moveItemAfter(doc, "it-0002", "ws-aaaa", null);
+    expect([...items(doc)].map((e) => e.item.id)).toEqual(["it-0002", "it-0001", "it-0003", "it-0004"]);
+  });
+
+  it("moves between workstreams and keeps the sub-lines indented", () => {
+    const doc = two();
+    moveItemAfter(doc, "it-0001", "ws-bbbb", "it-0003");
+    expect(serialize(doc)).toBe(
+      [
+        "# Tasks",
+        "",
+        "- Alpha ^ws-aaaa",
+        "\t- [ ] Two ^it-0002",
+        "- Beta ^ws-bbbb",
+        "\t- [ ] Three ^it-0003",
+        "\t- [ ] One ^it-0001",
+        "\t\t- @2026-10-01 09:00 Made",
+        "- Gamma ^ws-cccc",
+        "\t- [ ] Four ^it-0004",
+        ""
+      ].join("\n")
+    );
+  });
+
+  it("moves to top level and back", () => {
+    const doc = two();
+    moveItemAfter(doc, "it-0002", undefined, null);
+    expect(lines(doc).slice(0, 6)).toEqual(["# Tasks", "", "- [ ] Two ^it-0002", "- Alpha ^ws-aaaa", "\t- [ ] One ^it-0001", "\t\t- @2026-10-01 09:00 Made"]);
+    moveItemAfter(doc, "it-0002", "ws-aaaa", "it-0001");
+    expect(serialize(doc)).toBe(TWO);
+  });
+
+  it("does nothing when dropped after itself", () => {
+    const doc = two();
+    moveItemAfter(doc, "it-0001", "ws-aaaa", "it-0001");
+    expect(serialize(doc)).toBe(TWO);
+  });
+
+  it("throws for unknown ids and siblings", () => {
+    const doc = two();
+    expect(() => moveItemAfter(doc, "it-nope", "ws-aaaa", null)).toThrow(/Item not found/);
+    expect(() => moveItemAfter(doc, "it-0001", "ws-nope", null)).toThrow(/Workstream not found/);
+    expect(() => moveItemAfter(doc, "it-0001", "ws-aaaa", "it-0003")).toThrow(/Sibling not found/);
+    expect(() => moveItemAfter(doc, "ws-aaaa", undefined, null)).toThrow(/Item not found/);
+  });
+});
+
+describe("moveWorkstream", () => {
+  it("counts all top-level nodes, clamped", () => {
+    const doc = two();
+    moveWorkstream(doc, "ws-aaaa", 999);
+    expect(serialize(doc)).toBe(
+      "# Tasks\n\n- Beta ^ws-bbbb\n\t- [ ] Three ^it-0003\n- Gamma ^ws-cccc\n\t- [ ] Four ^it-0004\n- Alpha ^ws-aaaa\n\t- [ ] One ^it-0001\n\t\t- @2026-10-01 09:00 Made\n\t- [ ] Two ^it-0002\n"
+    );
+    moveWorkstream(doc, "ws-aaaa", 0);
+    expect(lines(doc)[0]).toBe("- Alpha ^ws-aaaa");
+  });
+
+  it("throws for an item or unknown id", () => {
+    const doc = two();
+    expect(() => moveWorkstream(doc, "it-0001", 0)).toThrow(/Workstream not found/);
+    expect(() => moveWorkstream(doc, "ws-nope", 0)).toThrow(/Workstream not found/);
+  });
+});
+
+describe("moveWorkstreamAfter", () => {
+  const order = (doc: ReturnType<typeof two>) => doc.nodes.flatMap((n) => (n.kind === "workstream" ? [n.id] : []));
+
+  it("moves to first, middle and last", () => {
+    const doc = two();
+    moveWorkstreamAfter(doc, "ws-cccc", null);
+    expect(order(doc)).toEqual(["ws-cccc", "ws-aaaa", "ws-bbbb"]);
+    expect(serialize(doc).startsWith("# Tasks\n\n- Gamma ^ws-cccc\n\t- [ ] Four ^it-0004\n- Alpha")).toBe(true);
+    moveWorkstreamAfter(doc, "ws-cccc", "ws-aaaa");
+    expect(order(doc)).toEqual(["ws-aaaa", "ws-cccc", "ws-bbbb"]);
+    moveWorkstreamAfter(doc, "ws-aaaa", "ws-bbbb");
+    expect(order(doc)).toEqual(["ws-cccc", "ws-bbbb", "ws-aaaa"]);
+  });
+
+  it("keeps children and round trips", () => {
+    const doc = two();
+    moveWorkstreamAfter(doc, "ws-aaaa", "ws-cccc");
+    const out = serialize(doc);
+    expect(out).toBe(
+      "# Tasks\n\n- Beta ^ws-bbbb\n\t- [ ] Three ^it-0003\n- Gamma ^ws-cccc\n\t- [ ] Four ^it-0004\n- Alpha ^ws-aaaa\n\t- [ ] One ^it-0001\n\t\t- @2026-10-01 09:00 Made\n\t- [ ] Two ^it-0002\n"
+    );
+    expect(serialize(parse(out, { today: "2026-11-01" }))).toBe(out);
+  });
+
+  it("does nothing when dropped after itself, throws for bad ids", () => {
+    const doc = two();
+    moveWorkstreamAfter(doc, "ws-bbbb", "ws-bbbb");
+    expect(serialize(doc)).toBe(TWO);
+    expect(() => moveWorkstreamAfter(doc, "it-0001", null)).toThrow(/Workstream not found/);
+    expect(() => moveWorkstreamAfter(doc, "ws-aaaa", "it-0001")).toThrow(/Workstream not found/);
   });
 });
 

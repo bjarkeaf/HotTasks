@@ -4,6 +4,7 @@ import type { Event, HeatOptions, Item, Store, Workstream } from "@hottasks/core
 import { findItem, addEvent, addTask, completeTask, editTask, formatAge, itemHeat, removeTask, reopenTask, setInfo, setLane, setStatus, timestampFromDate, timestampToMillis, touch } from "@hottasks/core";
 import type { Heat } from "@hottasks/core";
 import type { Actions } from "./pane-actions";
+import { itemSource } from "./pane-drag";
 import { editEvent, removeEvent } from "./pane-actions";
 import { LIMITS, confirmPopover, cx, fullTime, h, icon, isRendering, liveEdit, parseWhen, showTime } from "./pane-edit";
 import type { PaneHost } from "./pane-state";
@@ -78,6 +79,7 @@ export function buildCard(ctx: Ctx, item: Item, ws: Workstream | undefined, show
   const row = h("div", "row", undefined, card);
   row.tabIndex = 0;
   row.setAttribute("aria-expanded", String(open));
+  if (!showWs && !open && id) itemSource(card, row, id, item.lane);
   h("span", "bar", undefined, row);
   const main = h("div", "main", undefined, row);
   if (showWs && ws) h("span", "wstag", ws.name, main);

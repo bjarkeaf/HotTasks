@@ -309,3 +309,6 @@ body.theme-dark {
 .hottasks-menu .hottasks-box { width: 16px; height: 16px; padding: 0; margin-right: 8px; border: 1.5px solid var(--text-muted); border-radius: 3px; flex: none; position: relative; }
 .hottasks-menu .hottasks-box.hottasks-on { background: var(--interactive-accent); border-color: var(--interactive-accent); }
 .hottasks-menu .hottasks-box.hottasks-on::after { content: ""; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.hottasks-dragging { opacity: .4; }
+.hottasks-dropline { height: 2px; background: var(--interactive-accent); margin: -1px 8px; border-radius: 1px; pointer-events: none; }
+.hottasks-group[draggable="true"] { cursor: grab; }

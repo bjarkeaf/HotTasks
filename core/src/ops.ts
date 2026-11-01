@@ -245,6 +245,42 @@ export function move(doc: Document, id: string, parentId: string | undefined, in
   into.splice(Math.max(0, Math.min(index, into.length)), 0, item);
 }
 
+/** `index` counts all top-level nodes as stored, opaque lines included, after the workstream is removed. */
+export function moveWorkstream(doc: Document, id: string, index: number): void {
+  const ws = requireWorkstream(doc, id);
+  doc.nodes.splice(doc.nodes.indexOf(ws), 1);
+  doc.nodes.splice(Math.max(0, Math.min(index, doc.nodes.length)), 0, ws);
+}
+
+/** Position directly after sibling `afterId`, or before the first item or workstream when null. Opaque lines such as headings stay above. */
+function slotAfter(list: Array<Node | Item>, afterId: string | null): number {
+  if (afterId === null) return Math.max(0, list.findIndex((n) => n.kind !== "opaque"));
+  const at = list.findIndex((n) => n.kind !== "opaque" && n.id === afterId);
+  if (at < 0) throw new Error(`Sibling not found: ${afterId}`);
+  return at + 1;
+}
+
+/** Places the item right after sibling `afterId` in the target container, or first when null. Dropping it after itself changes nothing. */
+export function moveItemAfter(doc: Document, id: string, parentId: string | undefined, afterId: string | null): void {
+  const found = findItem(doc, id);
+  if (!found) throw new Error(`Item not found: ${id}`);
+  const parent = parentId === undefined ? undefined : requireWorkstream(doc, parentId);
+  if (afterId === id) return;
+  const list: Array<Node | Item> = parent ? parent.children : doc.nodes;
+  const rest = list.filter((n) => n !== found.item);
+  move(doc, id, parentId, slotAfter(rest, afterId));
+}
+
+/** Places the workstream right after workstream `afterId`, or first when null. */
+export function moveWorkstreamAfter(doc: Document, id: string, afterId: string | null): void {
+  const ws = requireWorkstream(doc, id);
+  if (afterId === id) return;
+  if (afterId !== null) requireWorkstream(doc, afterId);
+  const rest = doc.nodes.filter((n) => n !== ws);
+  const at = afterId === null ? rest.findIndex((n) => n.kind === "workstream") : rest.findIndex((n) => n.kind === "workstream" && n.id === afterId) + 1;
+  moveWorkstream(doc, id, Math.max(0, at));
+}
+
 export function importBullet(doc: Document, text: string, parentId?: string, opts: ImportOptions = {}): Workstream | Item {
   const now = opts.now ?? new Date();
   const parsed = parse(text, { today: timestampFromDate(now, false).date });

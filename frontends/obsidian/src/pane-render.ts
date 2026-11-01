@@ -3,6 +3,7 @@ import { addItem, findWorkstream, formatAge, itemHeat, items, rename, rollup, se
 import type { Ctx } from "./pane-card";
 import { buildCard } from "./pane-card";
 import { removeEmptyWorkstream } from "./pane-actions";
+import { dropZone, wsSource } from "./pane-drag";
 import { LIMITS, closePop, confirmPopover, h, icon, inputPopover, liveEdit, popover } from "./pane-edit";
 import { LANES, LANE_NAMES, wsHue, wsStyle } from "./pane-state";
 
@@ -52,10 +53,10 @@ export function renderList(ctx: Ctx, list: HTMLElement): void {
     // The order of the file, so positions stay familiar. Items without a workstream sit in a plain box at the end.
     for (const ws of workstreams(doc)) {
       const mine = vis.filter((e) => e.workstream === ws);
-      if (mine.length > 0) into.appendChild(buildBox(ctx, ws, mine));
+      if (mine.length > 0) into.appendChild(buildBox(ctx, ws, mine, lane));
     }
     const loose = vis.filter((e) => !e.workstream);
-    if (loose.length > 0) into.appendChild(buildBox(ctx, undefined, loose));
+    if (loose.length > 0) into.appendChild(buildBox(ctx, undefined, loose, lane));
   }
 
   // Workstreams with no items at all sit at the bottom, outside the lanes, until they get one or are deleted.
@@ -64,14 +65,17 @@ export function renderList(ctx: Ctx, list: HTMLElement): void {
     const head = h("div", "lanehead", undefined, list);
     h("span", "", "Empty workstreams", head);
     h("span", "n", String(empties.length), head);
-    for (const ws of empties) list.appendChild(buildBox(ctx, ws, []));
+    for (const ws of empties) list.appendChild(buildBox(ctx, ws, [], "empty"));
   }
 }
 
-function buildBox(ctx: Ctx, ws: Workstream | undefined, entries: Entry[]): HTMLElement {
+function buildBox(ctx: Ctx, ws: Workstream | undefined, entries: Entry[], lane: string): HTMLElement {
   const box = h("div", ws ? "wsgroup" : "wsgroup none");
   box.style.cssText = wsStyle(ctx.host.prefs, ws?.id);
-  box.appendChild(buildHeader(ctx, ws, entries.length));
+  const head = buildHeader(ctx, ws, entries.length);
+  box.appendChild(head);
+  if (ws?.id) wsSource(box, head, ws.id, lane);
+  dropZone(ctx, box, ws?.id, lane);
   for (const e of entries) box.appendChild(buildCard(ctx, e.item, e.workstream, false));
   return box;
 }

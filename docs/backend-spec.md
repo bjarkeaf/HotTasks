@@ -136,6 +136,9 @@ Every operation takes an item or workstream ID and edits the in-memory model, an
 | `addItem(parentId?, name)` | Creates an item, assigns an ID, lane Now | none |
 | `addWorkstream(name)` | Creates a workstream | none |
 | `move(id, parentId?, index)` | Reorders or reparents | none |
+| `moveItemAfter(id, parentId?, afterId)` | Places an item directly after a sibling, or first when `afterId` is null | none |
+| `moveWorkstream(id, index)` | Reorders a workstream among the top-level lines | none |
+| `moveWorkstreamAfter(id, afterId)` | Places a workstream directly after another, or first when `afterId` is null | none |
 | `importBullet(text, parentId?)` | Takes a bullet with children from any note and creates an item from it | none |
 | `history(id)` | Returns all events for an item from `tasks.md` and the archive, newest last | none |
 | `sweep()` | Runs housekeeping, see 5 | per item as described |

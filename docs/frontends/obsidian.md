@@ -37,6 +37,7 @@ Two views over the same backend, in one plugin. The pane is the main view, a sid
 ## Beyond the spec
 
 - Sort by workstream or coldest first, lane menu with combinable lanes, search and heat counts in the footer. View, lanes, open item and search text are kept between sessions.
+- Drag to reorder in the By workstream view: closed item rows within the same lane section, workstream boxes by their header. Only the position in the file changes, never the lane.
 - Open in note puts the cursor on the item's line in `tasks.md`.
 - Hidden `^ws-` and `^it-` IDs and relative `@` timestamps in the editor, revealed while the cursor is on the line.
 - Hand edits to `tasks.md` are picked up through the vault modify event, and the pane redraws without losing the open row or a half-typed field.
