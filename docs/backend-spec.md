@@ -82,7 +82,7 @@ Headings are allowed and ignored by the model, with one exception for compatibil
 
 ### Round trip
 
-Parsing a file and serializing the result must give back the same file, apart from these normalisations: bare timestamps expanded, missing IDs added, lane written into the checkbox. Unknown lines, blank lines and headings are preserved in place.
+Parsing a file and serializing the result must give back the same file, apart from these normalisations: bare timestamps expanded, missing IDs added, lane written into the checkbox, and a checkbox added to a plain bullet that turned out to be an item. Unknown lines, blank lines and headings are preserved in place. Bullet markers (`-` or `*`), indentation characters and line endings are kept as found.
 
 ## 3. Files
 

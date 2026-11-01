@@ -29,3 +29,6 @@ desktop.ini
 # Test output
 coverage/
 *.log
+
+# Real task sections from private notes, used by local tests only
+core/test/fixtures/legacy-*.md
