@@ -80,7 +80,7 @@ function label(item: Item, heat: Heat): string {
   if (item.lane === "done") return "done";
   if (heat.state === "terminal") return item.status ?? "";
   if (heat.state === "parked") return `parked until ${heat.parkedUntil?.date ?? ""}`;
-  return heat.ageMs !== undefined ? formatAge(heat.ageMs) : "";
+  return heat.ageMs !== undefined ? formatAge(heat.ageMs) : "no dates";
 }
 
 function build(view: EditorView, store: Store): DecorationSet {

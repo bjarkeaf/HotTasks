@@ -4,6 +4,7 @@ body {
   --hottasks-cold: #3b82c4;
   --hottasks-parked: #8a8f98;
   --hottasks-terminal: #6b7280;
+  --hottasks-unknown: #c4c8cf;
 }
 
 body.theme-dark {
@@ -12,6 +13,7 @@ body.theme-dark {
   --hottasks-cold: #6aa9e9;
   --hottasks-parked: #9aa0a9;
   --hottasks-terminal: #8b929d;
+  --hottasks-unknown: #4b5058;
 }
 
 .cm-line.hottasks-line {
@@ -24,6 +26,7 @@ body.theme-dark {
 .cm-line.hottasks-cold { --hottasks-marker: var(--hottasks-cold); }
 .cm-line.hottasks-parked { --hottasks-marker: var(--hottasks-parked); }
 .cm-line.hottasks-terminal { --hottasks-marker: var(--hottasks-terminal); }
+.cm-line.hottasks-unknown { --hottasks-marker: var(--hottasks-unknown); }
 
 .cm-line.hottasks-done {
   text-decoration: line-through;
