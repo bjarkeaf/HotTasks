@@ -1,5 +1,5 @@
 import type { Item, Workstream } from "@hottasks/core";
-import { addItem, findWorkstream, formatAge, itemHeat, items, rename, rollup, setLane, workstreams } from "@hottasks/core";
+import { addItem, findWorkstream, itemHeat, items, rename, rollup, setLane, workstreams } from "@hottasks/core";
 import type { Ctx } from "./pane-card";
 import { buildCard } from "./pane-card";
 import { removeEmptyWorkstream } from "./pane-actions";
