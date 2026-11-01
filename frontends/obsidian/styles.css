@@ -1,5 +1,5 @@
 body {
-  --hottasks-hot: #c2654a;
+  --hottasks-hot: #6f9f6a;
   --hottasks-warm: #c9a24f;
   --hottasks-cold: #6b8fb3;
   --hottasks-parked: #8a8f98;
@@ -8,7 +8,7 @@ body {
 }
 
 body.theme-dark {
-  --hottasks-hot: #b8674f;
+  --hottasks-hot: #5f8f5c;
   --hottasks-warm: #b59a52;
   --hottasks-cold: #5f83a6;
   --hottasks-parked: #9aa0a9;
