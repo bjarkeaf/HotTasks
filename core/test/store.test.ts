@@ -89,7 +89,7 @@ describe("Store", () => {
     expect(tasks).not.toContain("NPR63512");
     const archive = readFileSync(join(folder, "tasks-archive.md"), "utf8");
     expect(archive).toContain("## 2026-11-01");
-    expect(archive).toContain("### it-5h1n NPR63512 (Molex D-sub 15 - 065-1271-000)");
+    expect(archive).toContain("### it-5h1n NPR63512 (D-sub 15 connector)");
     expect(store.history("it-5h1n").map((e) => e.text)).toEqual(["Status: Released", "Done", "Archived"]);
   });
 });

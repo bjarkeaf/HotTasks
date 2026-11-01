@@ -7,8 +7,8 @@ const D = "2026-10-15";
 
 describe("extractLegacyTimestamp", () => {
   it.each([
-    ["Followed up with Ronen Tuesday (2026-10-13), 13:30", "Followed up with Ronen", { date: "2026-10-13", time: "13:30" }],
-    ["Forwarded to Ronen yesterday (2026-10-14), 08:00", "Forwarded to Ronen", { date: "2026-10-14", time: "08:00" }],
+    ["Followed up with Alex Tuesday (2026-10-13), 13:30", "Followed up with Alex", { date: "2026-10-13", time: "13:30" }],
+    ["Forwarded to Alex yesterday (2026-10-14), 08:00", "Forwarded to Alex", { date: "2026-10-14", time: "08:00" }],
     ["Auto-reminder today (2026-10-15) at 8:00", "Auto-reminder", { date: "2026-10-15", time: "08:00" }],
     ["Based on Sebastian Teams message Thursday (2026-10-15), 15:59", "Based on Sebastian Teams message", { date: "2026-10-15", time: "15:59" }],
     ["Emailed Michael about the length table, Wednesday (2026-10-28)", "Emailed Michael about the length table", { date: "2026-10-28" }],
@@ -17,14 +17,14 @@ describe("extractLegacyTimestamp", () => {
     ["Can be ignored according to Sunny Shi, 13/10", "Can be ignored according to Sunny Shi", { date: "2026-10-13" }],
     ["Reminded 13:10", "Reminded", { date: D, time: "13:10" }],
     ["Asaf,Yariv reminded 09:35", "Asaf,Yariv reminded", { date: D, time: "09:35" }],
-    ["Shani Zamir reminded to sign for T2P_Change_Analyst 15:17", "Shani Zamir reminded to sign for T2P_Change_Analyst", { date: D, time: "15:17" }]
+    ["Sam Zamir reminded to sign for Change_Analyst 15:17", "Sam Zamir reminded to sign for Change_Analyst", { date: D, time: "15:17" }]
   ])("%s", (line, text, at) => {
     expect(extractLegacyTimestamp(line, D)).toEqual({ text, at });
   });
 
   it.each([
-    "Auto Teams reply to Ronen on Sunday 8:00",
-    "Auto email reply to Shani and Ronen on Sunday at 8:00",
+    "Auto Teams reply to Alex on Sunday 8:00",
+    "Auto email reply to Sam and Alex on Sunday at 8:00",
     "Auto-reminder tomorrow at 8:00",
     "Amphenol confirmed PN active, 75 in stock, 100 more by EOM",
     "Ratio 1:2 is fine"
@@ -38,21 +38,21 @@ describe("migrateLegacyText", () => {
     const legacy = [
       "* Cable - HAR002731",
       "\t* Amphenol MCO-042215: *Engineering*",
-      "\t\t* Ask for Ronen's approval of MCO",
-      "\t\t* Followed up with Ronen Tuesday (2026-10-13), 13:30",
+      "\t\t* Ask for Alex's approval of MCO",
+      "\t\t* Followed up with Alex Tuesday (2026-10-13), 13:30",
       "\t\t* Amphenol confirmed PN active, 75 in stock",
-      "\t\t* Forwarded to Ronen yesterday (2026-10-14), 08:00",
-      "\t\t* **Ask Ronen if MCO can be promoted now**",
+      "\t\t* Forwarded to Alex yesterday (2026-10-14), 08:00",
+      "\t\t* **Ask Alex if MCO can be promoted now**",
       ""
     ].join("\n");
     const expected = [
       "* Cable - HAR002731",
       "\t* [ ] Amphenol MCO-042215: *Engineering*",
-      "\t\t* **Ask Ronen if MCO can be promoted now**",
-      "\t\t* Ask for Ronen's approval of MCO",
-      "\t\t* @2026-10-13 13:30 Followed up with Ronen",
+      "\t\t* **Ask Alex if MCO can be promoted now**",
+      "\t\t* Ask for Alex's approval of MCO",
+      "\t\t* @2026-10-13 13:30 Followed up with Alex",
       "\t\t* Amphenol confirmed PN active, 75 in stock",
-      "\t\t* @2026-10-14 08:00 Forwarded to Ronen",
+      "\t\t* @2026-10-14 08:00 Forwarded to Alex",
       ""
     ].join("\n");
     expect(migrateLegacyText(legacy, D)).toBe(expected);

@@ -12,8 +12,8 @@ describe("archive format", () => {
     const entries = parseArchive(archive);
     expect(entries.map((e) => [e.date, e.id, e.name, e.workstream])).toEqual([
       ["2026-10-20", "it-7x1a", "Lab PCs", undefined],
-      ["2026-11-01", "it-5h1n", "NPR63512", "Molex D-sub 15 - 065-1271-000"],
-      ["2026-11-01", "it-9q7d", "MCO-042063", "Molex D-sub 15 - 065-1271-000"]
+      ["2026-11-01", "it-5h1n", "NPR63512", "D-sub 15 connector"],
+      ["2026-11-01", "it-9q7d", "MCO-042063", "D-sub 15 connector"]
     ]);
     expect(entries[1]!.lines).toHaveLength(4);
     expect(entries[1]!.lines[1]).toBe("\t- @2026-10-20 09:40 Status: Released");
@@ -56,9 +56,9 @@ describe("appendArchive", () => {
 
 describe("renameInArchive", () => {
   it("renames every heading for the id and keeps the workstream", () => {
-    const text = appendArchive(archive, [{ date: "2026-11-02", id: "it-5h1n", name: "NPR63512", workstream: "Molex D-sub 15 - 065-1271-000", lines: ["- x"] }]);
+    const text = appendArchive(archive, [{ date: "2026-11-02", id: "it-5h1n", name: "NPR63512", workstream: "D-sub 15 connector", lines: ["- x"] }]);
     const out = renameInArchive(text, "it-5h1n", "NPR63512 v2");
-    expect(out.match(/^### it-5h1n NPR63512 v2 \(Molex D-sub 15 - 065-1271-000\)$/gm)).toHaveLength(2);
+    expect(out.match(/^### it-5h1n NPR63512 v2 \(D-sub 15 connector\)$/gm)).toHaveLength(2);
     expect(out).toContain("### it-7x1a Lab PCs\n");
     expect(out).toContain("### it-9q7d MCO-042063 (");
   });
@@ -80,25 +80,25 @@ describe("sweep", () => {
 
     const expectedTasks = canonical
       .replace("\t- [x] NPR63512: *Released* ^it-5h1n\n\t\t- @2026-10-20 09:40 Status: Released\n\t\t- @2026-10-31 16:02 Done\n", "")
-      .replace("\t\t- @2026-10-13 13:30 Reminded Ronen\n", "");
+      .replace("\t\t- @2026-10-13 13:30 Reminded Alex\n", "");
     expect(expectedTasks).not.toBe(canonical);
     expect(serialize(res.doc)).toBe(expectedTasks);
     expect(serialize(res.doc)).toContain(
-      "\t\t- @2026-10-15 15:17 Shani reminded to sign for T2P_Change_Analyst\n\t\t- Auto Teams reply to Ronen Sunday 08:00\n\t- [>] Alternative parts"
+      "\t\t- @2026-10-15 15:17 Sam reminded to sign for Change_Analyst\n\t\t- Auto Teams reply to Alex Sunday 08:00\n\t- [>] Alternative parts"
     );
 
     expect(res.archiveText).toBe(
       [
         "## 2026-11-01",
         "",
-        "### it-5h1n NPR63512 (Molex D-sub 15 - 065-1271-000)",
+        "### it-5h1n NPR63512 (D-sub 15 connector)",
         "- [x] NPR63512: *Released* ^it-5h1n",
         "\t- @2026-10-20 09:40 Status: Released",
         "\t- @2026-10-31 16:02 Done",
         "\t- @2026-11-01 00:00 Archived",
         "",
-        "### it-9q7d MCO-042063 (Molex D-sub 15 - 065-1271-000)",
-        "- @2026-10-13 13:30 Reminded Ronen",
+        "### it-9q7d MCO-042063 (D-sub 15 connector)",
+        "- @2026-10-13 13:30 Reminded Alex",
         ""
       ].join("\n")
     );
@@ -113,8 +113,8 @@ describe("sweep", () => {
   it("writes inherited timestamps in full and keeps the first kept event dated", () => {
     const doc = parse(canonical, { today });
     const res = sweep(doc, "", { today, keepEvents: 1 });
-    expect(res.archiveText).toContain("- @2026-10-13 13:30 Reminded Ronen\n- @2026-10-15 15:17 Shani reminded to sign for T2P_Change_Analyst\n");
-    expect(serialize(res.doc)).toContain("\t\t- @2026-10-15 15:17 Auto Teams reply to Ronen Sunday 08:00\n");
+    expect(res.archiveText).toContain("- @2026-10-13 13:30 Reminded Alex\n- @2026-10-15 15:17 Sam reminded to sign for Change_Analyst\n");
+    expect(serialize(res.doc)).toContain("\t\t- @2026-10-15 15:17 Auto Teams reply to Alex Sunday 08:00\n");
     expect(serialize(parse(serialize(res.doc))).length).toBe(serialize(res.doc).length);
   });
 

@@ -48,8 +48,8 @@ describe("setLane", () => {
     const expected = canonical
       .replace("\t- [ ] MCO-042063", "\t- [>] MCO-042063")
       .replace(
-        "\t\t- Auto Teams reply to Ronen Sunday 08:00\n",
-        `\t\t- Auto Teams reply to Ronen Sunday 08:00\n\t\t- @${STAMP} Lane: Later\n`
+        "\t\t- Auto Teams reply to Alex Sunday 08:00\n",
+        `\t\t- Auto Teams reply to Alex Sunday 08:00\n\t\t- @${STAMP} Lane: Later\n`
       );
     expect(serialize(doc)).toBe(expected);
   });
@@ -129,10 +129,10 @@ describe("addEvent and touch", () => {
 describe("addInfo", () => {
   it("inserts after the existing info and above the first event", () => {
     const doc = load();
-    addInfo(doc, "it-9q7d", "Owner is Ronen");
+    addInfo(doc, "it-9q7d", "Owner is Alex");
     const expected = canonical.replace(
       "\t\t- Needs 'NPR released in PDP' set before it can promote\n",
-      "\t\t- Needs 'NPR released in PDP' set before it can promote\n\t\t- Owner is Ronen\n"
+      "\t\t- Needs 'NPR released in PDP' set before it can promote\n\t\t- Owner is Alex\n"
     );
     expect(serialize(doc)).toBe(expected);
   });
@@ -209,7 +209,7 @@ describe("removeTask", () => {
     const doc = load();
     removeTask(doc, "it-9q7d", 0);
     const out = serialize(doc);
-    expect(out).not.toContain("Follow up with Ronen");
+    expect(out).not.toContain("Follow up with Alex");
     expect(out).toContain("\t- [ ] MCO-042063: *QA Review* ^it-9q7d\n\t\t- Needs 'NPR");
     expect(findItem(doc, "it-9q7d")!.item.events).toHaveLength(3);
   });
@@ -338,7 +338,7 @@ describe("move", () => {
     move(doc, "it-7x1a", "ws-k3f2", 0);
     const out = lines(doc);
     const at = out.indexOf("\t- [ ] Lab PCs ^it-7x1a");
-    expect(at).toBe(out.indexOf("- Molex D-sub 15 - 065-1271-000 ^ws-k3f2") + 1);
+    expect(at).toBe(out.indexOf("- D-sub 15 connector ^ws-k3f2") + 1);
     expect(out.slice(at, at + 3)).toEqual([
       "\t- [ ] Lab PCs ^it-7x1a",
       "\t\t- **Follow up with Brian in person**",
@@ -354,8 +354,8 @@ describe("move", () => {
     expect(out.endsWith(
       "- [>] Clean up Agile bookmarks ^it-0a0a\n" +
         "- [>] Alternative parts ^it-2m8c\n" +
-        "\t- **Check if LO matches between CviLux and Molex**\n" +
-        "\t- Ronen: AMTEK out, CviLux potential 2nd source\n" +
+        "\t- **Check if LO matches between Vendor B and Molex**\n" +
+        "\t- Alex: Vendor A out, Vendor B potential 2nd source\n" +
         "\t\t- Email thread from 2026-10-13\n"
     )).toBe(true);
     expect(findItem(doc, "it-2m8c")?.workstream).toBeUndefined();

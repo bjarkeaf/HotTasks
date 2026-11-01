@@ -11,9 +11,9 @@ describe("history", () => {
   it("merges archive and live events oldest to newest", () => {
     const events = history(swept.doc, swept.archiveText, "it-9q7d");
     expect(events.map((e) => [e.source, e.at, e.text])).toEqual([
-      ["archive", { date: "2026-10-13", time: "13:30" }, "Reminded Ronen"],
-      ["live", { date: "2026-10-15", time: "15:17" }, "Shani reminded to sign for T2P_Change_Analyst"],
-      ["live", { date: "2026-10-15", time: "15:17" }, "Auto Teams reply to Ronen Sunday 08:00"]
+      ["archive", { date: "2026-10-13", time: "13:30" }, "Reminded Alex"],
+      ["live", { date: "2026-10-15", time: "15:17" }, "Sam reminded to sign for Change_Analyst"],
+      ["live", { date: "2026-10-15", time: "15:17" }, "Auto Teams reply to Alex Sunday 08:00"]
     ]);
   });
 

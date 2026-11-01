@@ -44,15 +44,15 @@ One file, `tasks.md`, in Markdown. Tabs or spaces for indentation, the parser ac
 ```markdown
 ## Task status
 
-- Molex D-sub 15 - 065-1271-000 ^ws-k3f2
+- D-sub 15 connector ^ws-k3f2
 	- [ ] MCO-042063: *QA Review* ^it-9q7d
-		- **Follow up with Ronen** @2026-11-02
+		- **Follow up with Alex** @2026-11-02
 		- Needs 'NPR released in PDP' set before it can promote
-		- @2026-10-13 13:30 Reminded Ronen
-		- @15:17 Shani reminded to sign for T2P_Change_Analyst
+		- @2026-10-13 13:30 Reminded Alex
+		- @15:17 Sam reminded to sign for Change_Analyst
 	- [>] Alternative parts ^it-2m8c
-		- **Check if LO matches between CviLux and Molex**
-		- Ronen: AMTEK out, CviLux potential 2nd source
+		- **Check if LO matches between Vendor B and Molex**
+		- Alex: Vendor A out, Vendor B potential 2nd source
 - [ ] Lab PCs ^it-7x1a
 	- **Follow up with Brian in person**
 	- @2026-10-14 08:00 Request sent on Teams
@@ -109,9 +109,9 @@ The folder holding these is a setting. All three live together.
 ```markdown
 ## 2026-11-01
 
-### it-9q7d MCO-042063 (Molex D-sub 15 - 065-1271-000)
-- @2026-10-13 13:30 Reminded Ronen
-- @2026-10-15 15:17 Shani reminded to sign for T2P_Change_Analyst
+### it-9q7d MCO-042063 (D-sub 15 connector)
+- @2026-10-13 13:30 Reminded Alex
+- @2026-10-15 15:17 Sam reminded to sign for Change_Analyst
 ```
 
 A `##` heading per day the backend archived something. A `###` heading per item, with its ID, its name at the time, and its workstream name in parentheses. Under it the lines that were removed from `tasks.md`, in their original form. When a whole item is archived, its tasks, info and events all go, with a final event recording the archive.

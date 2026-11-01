@@ -11,7 +11,7 @@ describe("parse canonical", () => {
 
   it("finds workstreams and items", () => {
     const ws = findWorkstream(doc, "ws-k3f2");
-    expect(ws?.name).toBe("Molex D-sub 15 - 065-1271-000");
+    expect(ws?.name).toBe("D-sub 15 connector");
     expect(ws?.children.filter((c) => c.kind === "item")).toHaveLength(3);
     expect([...items(doc)].map((e) => e.item.id)).toEqual(["it-9q7d", "it-2m8c", "it-5h1n", "it-7x1a", "it-0a0a"]);
   });
@@ -31,13 +31,13 @@ describe("parse canonical", () => {
 
   it("reads tasks, info and events in order", () => {
     const it9 = findItem(doc, "it-9q7d")!.item;
-    expect(it9.tasks[0]?.text).toBe("Follow up with Ronen");
+    expect(it9.tasks[0]?.text).toBe("Follow up with Alex");
     expect(it9.tasks[0]?.notBefore).toEqual({ date: "2026-11-02" });
     expect(it9.info.map((f) => f.text)).toEqual(["Needs 'NPR released in PDP' set before it can promote"]);
     expect(it9.events.map((e) => e.text)).toEqual([
-      "Reminded Ronen",
-      "Shani reminded to sign for T2P_Change_Analyst",
-      "Auto Teams reply to Ronen Sunday 08:00"
+      "Reminded Alex",
+      "Sam reminded to sign for Change_Analyst",
+      "Auto Teams reply to Alex Sunday 08:00"
     ]);
   });
 
