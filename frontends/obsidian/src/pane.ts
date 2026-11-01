@@ -186,8 +186,9 @@ export class HotTasksPane extends ItemView {
     // A ticked task stays visible only while its item has the focus. Any click elsewhere, or leaving the pane, takes it away.
     const dropFocus = (keep: Element | null) => {
       const id = focusedItem();
-      if (!id || this.host.prefs.open === id) return;
+      if (!id) return;
       if (keep?.closest(`.${cx("card")}[data-id="${id}"]`)) return;
+      if (keep?.closest(`.${cx("pop")}, .${cx("menu")}`)) return;
       focusItem(null);
       this.render();
     };
@@ -250,6 +251,7 @@ export class HotTasksPane extends ItemView {
     const inside = e.composedPath().some((n) => n instanceof HTMLElement && (n.classList.contains(cx("card")) || n.classList.contains(cx("pop")) || n.classList.contains(cx("menu"))));
     if (inside) return;
     prefs.open = null;
+    focusItem(null);
     this.host.savePrefs();
     this.render();
   }
