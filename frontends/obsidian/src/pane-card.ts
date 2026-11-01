@@ -36,16 +36,23 @@ export function takeRefocus(): string | null {
 }
 const SYSTEM_EVENT = /^(Touched|Done|Archived|Lane: .+|Status: .+)$/;
 
-/** Tasks ticked today stay visible only while that item has the focus, so a wrong tick can be undone. */
+/**
+ * A ticked task stays in the list only during the focus in which it was ticked, so a wrong tick can be
+ * undone. Once the focus moves on it lives only as an event. Timestamps have minute resolution, so the
+ * focus start is floored to the minute.
+ */
 let focused: string | null = null;
+let focusedSince = 0;
 export function focusItem(id: string | null): void {
+  if (id !== focused) focusedSince = Math.floor(Date.now() / 60000) * 60000;
   focused = id;
 }
 export function focusedItem(): string | null {
   return focused;
 }
-function showsDone(item: Item, open: boolean): boolean {
-  return open || item.id === focused;
+function doneInFocus(item: Item, now: Date): Array<{ ev: Event; i: number }> {
+  if (item.id !== focused) return [];
+  return doneToday(item, now).filter(({ ev }) => stamp(ev) >= focusedSince);
 }
 
 /** The doc may have been replaced by a sweep or reload since the row was drawn, so look the item up again. */
@@ -210,7 +217,7 @@ function doneRow(ctx: Ctx, item: Item, ev: Event, i: number, cls: string, parent
 
 function buildClosedTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
   const id = item.id ?? "";
-  const done = showsDone(item, false) ? doneToday(item, ctx.now) : [];
+  const done = doneInFocus(item, ctx.now);
   const last = newest(item);
   const lastLine = () => {
     if (!last?.at) return;
@@ -258,7 +265,10 @@ function buildOpenTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
   const list = h("div", "tasks", undefined, main);
   item.tasks.forEach((_, i) => {
     const row = h("div", "tk", undefined, list);
-    checkbox(row, false, "Done, logs an event", () => ctx.actions.do((s) => void completeTask(s.doc, id, i)));
+    checkbox(row, false, "Done, logs an event", () => {
+      focusItem(id);
+      ctx.actions.do((s) => void completeTask(s.doc, id, i));
+    });
     taskText(ctx, item, i, row);
     const x = h("button", "ic danger tx", undefined, row);
     x.title = "Remove task without logging it";
@@ -268,7 +278,7 @@ function buildOpenTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
       ctx.actions.do((s) => removeTask(s.doc, id, i));
     });
   });
-  for (const { ev, i } of doneToday(item, ctx.now)) doneRow(ctx, item, ev, i, "tk pending", list);
+  for (const { ev, i } of doneInFocus(item, ctx.now)) doneRow(ctx, item, ev, i, "tk pending", list);
 
   const add = h("div", "tk newtk", undefined, list);
   const done = checkbox(add, false, "Add and mark done at once", () => {
