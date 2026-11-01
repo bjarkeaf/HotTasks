@@ -148,12 +148,12 @@ function buildName(ctx: Ctx, item: Item, main: HTMLElement, open: boolean): void
     liveEdit(t, {
       value: item.name,
       limit: LIMITS.name,
-      placeholder: "name",
+      placeholder: "Name",
       onCommit: (v) => (v ? ctx.actions.do((s) => s.rename(id, v)) : ctx.draw()),
       onEnd: ctx.draw
     });
   });
-  const s = h("span", status ? "status editable" : `status addstatus editable${open ? "" : " onhover"}`, status || "status", name);
+  const s = h("span", status ? "status editable" : `status addstatus editable${open ? "" : " onhover"}`, status || "Status", name);
   s.dataset.edit = "status";
   s.title = status ? "Click to change status" : "Set a status";
   s.addEventListener("click", (e) => {
@@ -161,7 +161,7 @@ function buildName(ctx: Ctx, item: Item, main: HTMLElement, open: boolean): void
     liveEdit(s, {
       value: status,
       limit: LIMITS.status,
-      placeholder: "status",
+      placeholder: "Status",
       onCommit: (v) => ctx.actions.do((st) => setStatus(st.doc, id, v === "" ? undefined : v)),
       onEnd: ctx.draw
     });
@@ -222,14 +222,14 @@ function buildClosedTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
     box.type = "checkbox";
     box.disabled = true;
     box.tabIndex = -1;
-    const span = h("span", "editable", "no task", none);
+    const span = h("span", "editable", "No task", none);
     span.title = "Click to add a task";
     span.addEventListener("click", (e) => {
       e.stopPropagation();
       liveEdit(span, {
         value: "",
         limit: LIMITS.task,
-        placeholder: "task",
+        placeholder: "Task",
         onCommit: (v) => ctx.actions.do((s) => void addTask(s.doc, id, v)),
         onEnd: ctx.draw
       });
@@ -320,7 +320,7 @@ function buildDetail(ctx: Ctx, item: Item): HTMLElement {
     liveEdit(info, {
       value: lines.join("\n"),
       multiline: true,
-      placeholder: "one line per point",
+      placeholder: "One line per point",
       onCommit: (v) =>
         ctx.actions.do((s) => void setInfo(s.doc, id, v.split("\n").map((l) => l.trim()).filter((l) => l !== ""))),
       onEnd: ctx.draw
@@ -405,7 +405,7 @@ function buildEventRow(ctx: Ctx, item: Item, ev: Event, i: number, parent: HTMLE
     liveEdit(span, {
       value: ev.text,
       limit: LIMITS.event,
-      placeholder: "what happened",
+      placeholder: "What happened",
       onCommit: (v) => (v ? ctx.actions.do((s) => withItem(s, id, (it) => editEvent(it, i, { text: v }))) : ctx.draw()),
       onEnd: ctx.draw
     });
