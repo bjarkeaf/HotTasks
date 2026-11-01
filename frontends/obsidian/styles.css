@@ -160,7 +160,7 @@ body.theme-dark {
 .hottasks-wsgroup:last-child { margin-bottom: 10px; }
 .hottasks-wsgroup .hottasks-card { border-top: 1px solid var(--background-modifier-border); }
 .hottasks-wsgroup .hottasks-card:first-of-type { border-top: 0; }
-.hottasks-wsgroup .hottasks-row { grid-template-columns: 0 minmax(0, 1fr) 26px max-content; gap: 0 8px; padding-left: 10px; padding-right: 0; }
+.hottasks-wsgroup .hottasks-row { grid-template-columns: 0 minmax(0, 1fr) 26px 6.2em; gap: 0 8px; padding-left: 10px; padding-right: 0; }
 .hottasks-wsgroup .hottasks-row .hottasks-bar { visibility: hidden; width: 0; }
 .hottasks-group { padding: 7px 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: color-mix(in srgb, var(--hottasks-ws, var(--background-modifier-border)) 16%, var(--background-primary)); color: var(--text-normal); border-bottom: 1px solid color-mix(in srgb, var(--hottasks-ws, var(--background-modifier-border)) 45%, var(--background-modifier-border)); }
 .hottasks-group .hottasks-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--hottasks-ws); padding: 0; flex: none; border: 2px solid transparent; }
@@ -194,7 +194,7 @@ body.theme-dark {
 .hottasks-card.hottasks-open { background: var(--background-primary); box-shadow: inset 0 0 0 2px var(--interactive-accent); border-radius: 4px; margin: 2px; }
 .hottasks-card.hottasks-open .hottasks-row:hover { background: transparent; }
 /* Row grid: bar | text | latest event | heat block. The name spans the text and event columns, so only the task line shares width with the event text. */
-.hottasks-row { position: relative; display: grid; grid-template-columns: 4px minmax(0, 1fr) 26px max-content; grid-auto-rows: auto; gap: 0 8px; padding: 7px 0 7px 10px; cursor: default; user-select: none; }
+.hottasks-row { position: relative; display: grid; grid-template-columns: 4px minmax(0, 1fr) 26px 6.2em; grid-auto-rows: auto; gap: 0 8px; padding: 7px 0 7px 10px; cursor: default; user-select: none; }
 .hottasks-row .hottasks-bar { grid-column: 1; grid-row: 1 / span 4; }
 .hottasks-row .hottasks-main { display: contents; }
 .hottasks-row .hottasks-wstag { grid-column: 2 / 4; }
@@ -242,7 +242,7 @@ body.theme-dark {
 .hottasks-row .hottasks-task .hottasks-editable:hover { border-bottom-color: var(--text-muted); }
 .hottasks-row .hottasks-age { display: contents; }
 .hottasks-row .hottasks-age .hottasks-block { align-self: stretch; margin: -7px 0; }
-.hottasks-row .hottasks-age .hottasks-block { min-width: 4.8em; padding: 0 8px; border-radius: 0; background: var(--hottasks-c); color: #fff; font: 600 13px/1 var(--font-interface); font-variant-numeric: tabular-nums; letter-spacing: .02em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: inset 0 0 0 0 var(--text-normal); transition: box-shadow .1s; }
+.hottasks-row .hottasks-age .hottasks-block { width: 100%; min-width: 0; padding: 0 4px; white-space: nowrap; border-radius: 0; background: var(--hottasks-c); color: #fff; font: 600 13px/1 var(--font-interface); font-variant-numeric: tabular-nums; letter-spacing: .02em; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: inset 0 0 0 0 var(--text-normal); transition: box-shadow .1s; }
 .hottasks-row .hottasks-age .hottasks-block:hover { box-shadow: inset 0 0 0 2px var(--text-normal); }
 .hottasks-row .hottasks-age .hottasks-block:active { filter: brightness(.9); }
 .hottasks-card.hottasks-open .hottasks-row .hottasks-age .hottasks-block { border-radius: 0 3px 0 0; }
@@ -261,7 +261,7 @@ body.theme-dark {
 .hottasks-info:hover { border-bottom-color: var(--text-muted); }
 .hottasks-info.hottasks-empty { color: var(--text-muted); font-style: italic; border-bottom-color: var(--background-modifier-border); }
 .hottasks-info.hottasks-live { display: block; min-height: 1.5em; white-space: pre-wrap; color: var(--text-normal); font-style: normal; border: 0; border-bottom: 1px solid var(--interactive-accent) !important; background: transparent; border-radius: 0; padding: 1px 2px; }
-.hottasks-detail .hottasks-ev { display: grid; grid-template-columns: 11ch 1fr 22px; gap: 10px; cursor: text; border-radius: 3px; padding: 1px 0; margin: 0; align-items: baseline; }
+.hottasks-detail .hottasks-ev { display: grid; grid-template-columns: 6.6em 1fr 22px; gap: 10px; cursor: text; border-radius: 3px; padding: 1px 0; margin: 0; align-items: baseline; }
 .hottasks-detail .hottasks-ev time { white-space: nowrap; }
 .hottasks-detail .hottasks-ev time.hottasks-live { white-space: nowrap; min-width: 9ch; }
 .hottasks-detail .hottasks-ev span.hottasks-live { display: block; min-width: 0; }
@@ -272,7 +272,7 @@ body.theme-dark {
 
 .hottasks-detail .hottasks-ev time { font: 12px var(--font-interface); color: var(--text-normal); opacity: .75; font-variant-numeric: tabular-nums; }
 .hottasks-detail .hottasks-ev.hottasks-sys span { color: var(--text-muted); font-style: italic; }
-.hottasks-detail .hottasks-add { display: grid; grid-template-columns: 11ch 1fr 22px; gap: 10px; margin: 2px 0 6px; align-items: baseline; }
+.hottasks-detail .hottasks-add { display: grid; grid-template-columns: 6.6em 1fr 22px; gap: 10px; margin: 2px 0 6px; align-items: baseline; }
 .hottasks-detail .hottasks-add .hottasks-when { font: 12px var(--font-interface); font-variant-numeric: tabular-nums; width: 100%; padding-left: 0; padding-right: 0; }
 .hottasks-detail .hottasks-add input[data-input=event] { padding-left: 0; }
 .hottasks-detail .hottasks-add input { border: 0; border-bottom: 1px dashed var(--background-modifier-border); border-radius: 0; background: transparent; padding: 1px 2px; }
