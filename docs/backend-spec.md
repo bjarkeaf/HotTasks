@@ -10,13 +10,15 @@ The backend is a library with no user interface and no dependency on any editor.
 |---|---|
 | Workstream | An optional grouping of items. A project, a part, a person. Has a name and an ID, nothing else. |
 | Item | One line of follow-up. The unit that carries lane, status and heat. |
-| Task | The next action on an item. Zero or one per item. |
-| Fact | Context that stays with the item for its whole life. Zero or more per item. |
+| Task | A next action on an item. Zero or more per item, in order. |
+| Info | Free text that stays with the item for its whole life. Zero or more lines per item, shown to the user as one block. |
 | Event | Something that happened, with a timestamp. Zero or more per item, ordered oldest to newest. |
 
-A workstream contains items. An item contains a task, facts and events, in that order. An item may stand alone at top level without a workstream.
+A workstream contains items. An item contains tasks, info and events, in that order. An item may stand alone at top level without a workstream.
 
-What a bullet is follows from what is under it, not from its depth. A bullet whose children are a task, facts or events is an item. A bullet whose children are items is a workstream.
+What a bullet is follows from what is under it, not from its depth. A bullet whose children are tasks, info or events is an item. A bullet whose children are items is a workstream.
+
+Finishing a task is an event, `Done: <task text>`, written at the moment the task is removed. Frontends show today's `Done:` events as ticked tasks until the day ends, and reopening one deletes the event and restores the task line.
 
 ### Properties of an item
 
@@ -62,11 +64,11 @@ One file, `tasks.md`, in Markdown. Tabs or spaces for indentation, the parser ac
 |---|---|
 | Workstream | Plain bullet, no checkbox. Name, then ID. |
 | Item | Checkbox bullet. `[ ]` Now, `[>]` Later, `[x]` Done. Name, optional `: *Status*`, then ID. |
-| Task | Bold bullet directly under the item. Optional trailing `@date` meaning not before that date. |
-| Fact | Plain bullet under the item, above the first event. |
+| Task | Bold bullet under the item, above the first event. Several allowed. Optional trailing `@date` meaning not before that date. |
+| Info | Plain bullet under the item, above the first event. |
 | Event | Bullet starting with a timestamp, `@HH:MM` or `@YYYY-MM-DD HH:MM`. |
 
-The event block starts at the first timestamped line under an item and runs to the end of the item. A line inside the event block with no timestamp is still an event. Its time for heat purposes is the timestamp of the nearest timestamped line above it. A line above the first timestamped line is a fact.
+The event block starts at the first timestamped line under an item and runs to the end of the item. A line inside the event block with no timestamp is still an event. Its time for heat purposes is the timestamp of the nearest timestamped line above it. A line above the first timestamped line is a task if bold, otherwise info.
 
 Bare `@HH:MM` means that time on the day of the file's most recent save for new lines, and is expanded to the full form by the backend on save, so the file on disk only ever holds full timestamps. Frontends may show full timestamps as relative time.
 
@@ -88,7 +90,7 @@ A bullet whose ID starts with `ws-` is a workstream and one whose ID starts with
 
 ### Round trip
 
-Parsing a file and serializing the result must give back the same file, apart from these normalisations: bare timestamps expanded, missing IDs added, lane written into the checkbox, a checkbox added to a plain bullet that turned out to be an item, and the task moved to the first line under its item. Unknown lines, blank lines and headings are preserved in place. Bullet markers (`-` or `*`), indentation characters and line endings are kept as found, except that a file with mixed line endings is written with one. A checkbox on a line nested under an item is kept as text.
+Parsing a file and serializing the result must give back the same file, apart from these normalisations: bare timestamps expanded, missing IDs added, lane written into the checkbox, a checkbox added to a plain bullet that turned out to be an item, and tasks moved above info under their item. Unknown lines, blank lines and headings are preserved in place. Bullet markers (`-` or `*`), indentation characters and line endings are kept as found, except that a file with mixed line endings is written with one. A checkbox on a line nested under an item is kept as text.
 
 Whitespace inside a line is not guaranteed: repeated spaces after a marker, trailing spaces, `[X]` for `[x]` and `_status_` for `*status*` are normalised.
 
@@ -112,7 +114,7 @@ The folder holding these is a setting. All three live together.
 - @2026-10-15 15:17 Shani reminded to sign for T2P_Change_Analyst
 ```
 
-A `##` heading per day the backend archived something. A `###` heading per item, with its ID, its name at the time, and its workstream name in parentheses. Under it the lines that were removed from `tasks.md`, in their original form. When a whole item is archived, its task, facts and events all go, with a final event recording the archive.
+A `##` heading per day the backend archived something. A `###` heading per item, with its ID, its name at the time, and its workstream name in parentheses. Under it the lines that were removed from `tasks.md`, in their original form. When a whole item is archived, its tasks, info and events all go, with a final event recording the archive.
 
 ## 4. Operations
 
@@ -123,9 +125,13 @@ Every operation takes an item or workstream ID and edits the in-memory model, an
 | `setLane(id, lane)` | Changes the checkbox | `Lane: Later`, `Lane: Now`, `Done` |
 | `setStatus(id, text)` | Changes the italic status | `Status: <text>` |
 | `addEvent(id, text, at?)` | Appends an event, timestamp defaults to now | the text itself |
-| `touch(id)` | Appends an empty-text event with the current time | `Touched` |
-| `setTask(id, text, notBefore?)` | Replaces the task line | none |
-| `addFact(id, text)` | Inserts a fact above the first event | none |
+| `touch(id)` | Appends an event with the current time and no other content. Meant for "looked at it, nothing to write" | `Touched` |
+| `addTask(id, text, notBefore?)` | Appends a task | none |
+| `editTask(id, index, text, notBefore?)` | Changes a task, empty text removes it | none |
+| `removeTask(id, index)` | Removes a task without a trace | none |
+| `completeTask(id, index)` | Removes the task and records it | `Done: <task text>` |
+| `reopenTask(id, eventIndex)` | Deletes a `Done:` event and restores the task | none |
+| `addInfo(id, text)` / `setInfo(id, lines)` | Adds one info line, or replaces the whole block | none |
 | `rename(id, name)` | Changes the name on the line and rewrites it in the archive | none |
 | `addItem(parentId?, name)` | Creates an item, assigns an ID, lane Now | none |
 | `addWorkstream(name)` | Creates a workstream | none |
@@ -139,7 +145,7 @@ Every operation takes an item or workstream ID and edits the in-memory model, an
 `sweep()` runs on the first save of each day in a session and on demand.
 
 1. Archive every item whose lane is Done and whose Done event is older than today.
-2. For every remaining item, move events beyond the newest N to the archive. N is a setting, default 3. Facts and the task are never trimmed.
+2. For every remaining item, move events beyond the newest N to the archive. N is a setting, default 3. Info and tasks are never trimmed.
 3. Take the daily snapshot if enabled and not already taken today.
 4. Rewrite names in the archive for any item renamed since the last sweep.
 
@@ -149,7 +155,7 @@ Heat is the elapsed time from now to the newest timestamp under the item, counti
 
 Rules:
 
-- A task dated in the future parks the item. Heat is reported as parked until that date, and from that date onward it is computed as if the item was touched at the start of that day.
+- A task dated in the future parks the item. With several dated tasks the earliest date counts. Heat is reported as parked until that date, and from that date onward it is computed as if the item was touched at the start of that day.
 - A status change counts as a touch, because the matching event carries a timestamp.
 - An item with a terminal status does not report heat. Terminal statuses are a setting, default `Released`, `Rejected`, `Deleted`, `Cancelled`.
 - An item with no timestamps at all reports heat as unknown.
@@ -176,4 +182,8 @@ The backend is a TypeScript package with no runtime dependencies. It exposes:
 - `settings`: event trim count, heat thresholds, terminal statuses, snapshot on or off, folder
 - A change notification so frontends can redraw after any write, including writes caused by hand edits detected on disk
 
-Frontends must not hold state that the backend does not have. Anything a frontend wants to remember about an item goes through the backend or does not persist.
+Frontends must not hold state that the backend does not have, with one exception: presentation preferences that have no place in Markdown, such as a chosen colour per workstream, live in the frontend's own settings keyed by ID.
+
+## 9. Text limits
+
+The file accepts any length. Frontends limit what can be typed so a row stays on one line: item name 32 characters, status 14, workstream name 24, task 80. Text that arrives longer than that from the file is shown in full and marked, never cut, and editing it keeps the full text while refusing to grow it.

@@ -35,3 +35,6 @@ core/test/fixtures/legacy-*.md
 
 # Internal connector notes with NVIDIA hostnames, names and paths, kept out of the public repo
 docs/connectors/
+
+# Interactive mock with real item names, local only
+docs/mock/

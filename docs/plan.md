@@ -27,7 +27,7 @@
 
 ## 4. Second frontend
 
-- Obsidian pane with lanes as columns, sorted by heat
+- Obsidian pane as prototyped in docs/mock/pane-mock.html, grouped by workstream, heat block per item, in-place editing
 - Compare against the editor frontend using the frontend spec checklist
 
 ## 5. Connectors
