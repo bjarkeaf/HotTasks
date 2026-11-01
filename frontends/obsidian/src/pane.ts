@@ -5,7 +5,7 @@ import { addWorkstream, findItem, setLane, touch } from "@hottasks/core";
 import { HistoryModal } from "./modals";
 import { Actions } from "./pane-actions";
 import type { Ctx } from "./pane-card";
-import { focusItem, takeRefocus } from "./pane-card";
+import { focusItem, focusedItem, takeRefocus } from "./pane-card";
 import { closeFloating, cx, dropdown, h, icon, inputPopover, isEditing, LIMITS, menuAt, menuHeading, menuItem, onFloatingDismiss, onOutsideMouseDown, onSwallowedClick, setRendering } from "./pane-edit";
 import { renderList, renderSummary } from "./pane-render";
 import type { PaneHost } from "./pane-state";
@@ -183,6 +183,18 @@ export class HotTasksPane extends ItemView {
 
     this.list = h("div", "list", undefined, pane);
     this.list.addEventListener("contextmenu", (e) => this.contextMenu(e));
+    // A ticked task stays visible only while its item has the focus. Any click elsewhere, or leaving the pane, takes it away.
+    const dropFocus = (keep: Element | null) => {
+      const id = focusedItem();
+      if (!id || this.host.prefs.open === id) return;
+      if (keep?.closest(`.${cx("card")}[data-id="${id}"]`)) return;
+      focusItem(null);
+      this.render();
+    };
+    pane.addEventListener("mousedown", (e) => dropFocus(e.target as Element), true);
+    pane.addEventListener("focusout", (e) => {
+      if (!(e.relatedTarget instanceof Node) || !pane.contains(e.relatedTarget)) dropFocus(null);
+    });
 
     const footer = h("div", "footer", undefined, pane);
     this.summary = h("div", "summary", undefined, footer);

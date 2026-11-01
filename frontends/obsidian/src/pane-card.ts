@@ -41,6 +41,9 @@ let focused: string | null = null;
 export function focusItem(id: string | null): void {
   focused = id;
 }
+export function focusedItem(): string | null {
+  return focused;
+}
 function showsDone(item: Item, open: boolean): boolean {
   return open || item.id === focused;
 }
