@@ -1,4 +1,4 @@
-import type { Document, Event, Fact, Item, Lane, LineFormat, Node, Opaque, Task, Timestamp, Workstream } from "./model.js";
+import type { Document, Event, Info, Item, Lane, LineFormat, Node, Opaque, Task, Timestamp, Workstream } from "./model.js";
 import { timestampFromDate } from "./model.js";
 
 export interface ParseOptions {
@@ -152,7 +152,8 @@ function buildItem(b: RawBullet, context: Lane, today: string): Item {
     checkbox: b.checkbox !== undefined,
     name: head.name,
     lane: laneFromCheckbox(b.checkbox, context),
-    facts: [],
+    tasks: [],
+    info: [],
     events: []
   };
   if (head.id) item.id = head.id;
@@ -166,7 +167,7 @@ function buildItem(b: RawBullet, context: Lane, today: string): Item {
     if (c.checkbox !== undefined) {
       // A checkbox nested under an item is kept as text so nothing is lost.
       const text = `[${c.checkbox}] ${c.text}`.trimEnd();
-      if (item.events.length === 0) item.facts.push({ format: c.format, text, children });
+      if (item.events.length === 0) item.info.push({ format: c.format, text, children });
       else {
         const ev: Event = { format: c.format, text, explicit: false, children };
         if (lastStamp) ev.at = lastStamp;
@@ -175,10 +176,10 @@ function buildItem(b: RawBullet, context: Lane, today: string): Item {
       continue;
     }
     const bold = BOLD_LINE.exec(c.text);
-    if (bold && !item.task && item.events.length === 0) {
+    if (bold && item.events.length === 0) {
       const task: Task = { format: c.format, text: bold[1]!, children };
       if (bold[2]) task.notBefore = { date: bold[2] };
-      item.task = task;
+      item.tasks.push(task);
       continue;
     }
     const full = FULL_STAMP.exec(c.text);
@@ -199,8 +200,8 @@ function buildItem(b: RawBullet, context: Lane, today: string): Item {
       continue;
     }
     if (item.events.length === 0) {
-      const fact: Fact = { format: c.format, text: c.text, children };
-      item.facts.push(fact);
+      const info: Info = { format: c.format, text: c.text, children };
+      item.info.push(info);
     } else {
       const ev: Event = { format: c.format, text: c.text, explicit: false, children };
       if (lastStamp) ev.at = lastStamp;

@@ -90,6 +90,11 @@ describe("itemHeat", () => {
     expect(heat.lastTouched).toEqual({ date: "2026-11-01", time: "00:00" });
   });
 
+  it("parks until the earliest not-before date among several tasks", () => {
+    const heat = itemHeat(build([`- **Later** @2026-11-09`, `- **Sooner** @2026-11-03`, `- **Undated**`]), now);
+    expect(heat).toEqual({ state: "parked", parkedUntil: { date: "2026-11-03" } });
+  });
+
   it("is parked one minute before midnight and live at midnight", () => {
     const item = build([`- **Wait** @2026-11-02`]);
     expect(itemHeat(item, new Date(2026, 10, 1, 23, 59)).state).toBe("parked");

@@ -6,7 +6,13 @@ import {
   serialize,
   findItem,
   addEvent,
-  addFact,
+  addInfo,
+  addTask,
+  completeTask,
+  editTask,
+  removeTask,
+  reopenTask,
+  setInfo,
   addItem,
   addWorkstream,
   ensureIds,
@@ -15,7 +21,6 @@ import {
   rename,
   setLane,
   setStatus,
-  setTask,
   touch,
   items,
   usedIds
@@ -118,10 +123,10 @@ describe("addEvent and touch", () => {
   });
 });
 
-describe("addFact", () => {
-  it("inserts after the existing facts and above the first event", () => {
+describe("addInfo", () => {
+  it("inserts after the existing info and above the first event", () => {
     const doc = load();
-    addFact(doc, "it-9q7d", "Owner is Ronen");
+    addInfo(doc, "it-9q7d", "Owner is Ronen");
     const expected = canonical.replace(
       "\t\t- Needs 'NPR released in PDP' set before it can promote\n",
       "\t\t- Needs 'NPR released in PDP' set before it can promote\n\t\t- Owner is Ronen\n"
@@ -131,15 +136,16 @@ describe("addFact", () => {
 
   it("works on an item with no children, deriving the format", () => {
     const doc = load();
-    addFact(doc, "it-0a0a", "Bookmarks live in Edge");
+    addInfo(doc, "it-0a0a", "Bookmarks live in Edge");
     expect(serialize(doc)).toContain("- [>] Clean up Agile bookmarks ^it-0a0a\n\t- Bookmarks live in Edge\n");
   });
 });
 
-describe("setTask", () => {
+describe("addTask", () => {
   it("creates a task above the events when the item has only events", () => {
     const doc = load();
-    setTask(doc, "it-5h1n", "Archive it");
+    const task = addTask(doc, "it-5h1n", "Archive it");
+    expect(task.text).toBe("Archive it");
     const expected = canonical.replace(
       "\t- [x] NPR63512: *Released* ^it-5h1n\n",
       "\t- [x] NPR63512: *Released* ^it-5h1n\n\t\t- **Archive it**\n"
@@ -149,34 +155,112 @@ describe("setTask", () => {
 
   it("writes a not-before date", () => {
     const doc = load();
-    setTask(doc, "it-5h1n", "Archive it", { date: "2026-11-05" });
+    addTask(doc, "it-5h1n", "Archive it", { date: "2026-11-05" });
     expect(serialize(doc)).toContain("\t\t- **Archive it** @2026-11-05\n");
   });
 
-  it("replaces the text and keeps format and children", () => {
-    const doc = parse("- [ ] A ^it-aaaa\n\t* **Old**\n\t\t- sub\n", { today: "2026-11-01" });
-    setTask(doc, "it-aaaa", "New");
-    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t* **New**\n\t\t- sub\n");
-  });
-
-  it("replacing without a date clears the old date", () => {
-    const doc = load();
-    setTask(doc, "it-9q7d", "Chase Shani");
-    expect(serialize(doc)).toContain("\t\t- **Chase Shani**\n");
-  });
-
-  it("removes the task on empty text", () => {
-    const doc = load();
-    setTask(doc, "it-9q7d", "");
-    const out = serialize(doc);
-    expect(out).not.toContain("Follow up with Ronen");
-    expect(out).toContain("\t- [ ] MCO-042063: *QA Review* ^it-9q7d\n\t\t- Needs 'NPR");
+  it("appends after existing tasks and copies their format", () => {
+    const doc = parse("- [ ] A ^it-aaaa\n\t* **Old**\n\t\t- sub\n\t- note\n", { today: "2026-11-01" });
+    addTask(doc, "it-aaaa", "New");
+    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t* **Old**\n\t\t- sub\n\t* **New**\n\t- note\n");
   });
 
   it("derives space indentation from the item line", () => {
     const doc = parse("  - [ ] A ^it-aaaa\n", { today: "2026-11-01" });
-    setTask(doc, "it-aaaa", "Do");
+    addTask(doc, "it-aaaa", "Do");
     expect(serialize(doc)).toBe("  - [ ] A ^it-aaaa\n    - **Do**\n");
+  });
+});
+
+describe("editTask", () => {
+  const two = "- [ ] A ^it-aaaa\n\t* **One** @2026-11-05\n\t\t- sub\n\t* **Two**\n";
+
+  it("replaces the text and keeps format and children", () => {
+    const doc = parse(two, { today: "2026-11-01" });
+    editTask(doc, "it-aaaa", 1, "Second");
+    expect(serialize(doc)).toBe(two.replace("**Two**", "**Second**"));
+  });
+
+  it("clears the date when omitted and sets it when given", () => {
+    const doc = parse(two, { today: "2026-11-01" });
+    editTask(doc, "it-aaaa", 0, "One");
+    expect(serialize(doc)).toBe(two.replace(" @2026-11-05", ""));
+    editTask(doc, "it-aaaa", 1, "Two", { date: "2026-12-01" });
+    expect(serialize(doc)).toContain("\t* **Two** @2026-12-01\n");
+  });
+
+  it("removes the task on empty text", () => {
+    const doc = parse(two, { today: "2026-11-01" });
+    expect(editTask(doc, "it-aaaa", 0, "  ")).toBeUndefined();
+    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t* **Two**\n");
+  });
+
+  it("throws on a missing task", () => {
+    const doc = parse(two, { today: "2026-11-01" });
+    expect(() => editTask(doc, "it-aaaa", 5, "x")).toThrow("Task not found");
+  });
+});
+
+describe("removeTask", () => {
+  it("removes one task and writes no event", () => {
+    const doc = load();
+    removeTask(doc, "it-9q7d", 0);
+    const out = serialize(doc);
+    expect(out).not.toContain("Follow up with Ronen");
+    expect(out).toContain("\t- [ ] MCO-042063: *QA Review* ^it-9q7d\n\t\t- Needs 'NPR");
+    expect(findItem(doc, "it-9q7d")!.item.events).toHaveLength(3);
+  });
+});
+
+describe("completeTask and reopenTask", () => {
+  const text = "- [ ] A ^it-aaaa\n\t- **One**\n\t\t- sub\n\t- **Two**\n\t- @2026-10-01 09:00 Started\n";
+
+  it("moves the task into a Done event, keeping its sub-lines", () => {
+    const doc = parse(text, { today: "2026-11-01" });
+    const ev = completeTask(doc, "it-aaaa", 0, NOW);
+    expect(ev.text).toBe("Done: One");
+    expect(serialize(doc)).toBe(
+      `- [ ] A ^it-aaaa\n\t- **Two**\n\t- @2026-10-01 09:00 Started\n\t- @${STAMP} Done: One\n\t\t- sub\n`
+    );
+  });
+
+  it("reopening restores the same task text", () => {
+    const doc = parse(text, { today: "2026-11-01" });
+    completeTask(doc, "it-aaaa", 0, NOW);
+    const task = reopenTask(doc, "it-aaaa", 1);
+    expect(task.text).toBe("One");
+    const item = findItem(doc, "it-aaaa")!.item;
+    expect(item.tasks.map((t) => t.text)).toEqual(["Two", "One"]);
+    expect(item.tasks[1]!.children).toEqual(["\t\t- sub"]);
+    expect(item.events.map((e) => e.text)).toEqual(["Started"]);
+  });
+
+  it("keeps the stamp of a following lazy event when the Done event goes", () => {
+    const doc = parse("- [ ] A ^it-aaaa\n\t- @2026-10-01 09:00 Done: One\n\t- lazy\n", { today: "2026-11-01" });
+    reopenTask(doc, "it-aaaa", 0);
+    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t- **One**\n\t- @2026-10-01 09:00 lazy\n");
+  });
+
+  it("throws when the event is not a Done event", () => {
+    const doc = parse(text, { today: "2026-11-01" });
+    expect(() => reopenTask(doc, "it-aaaa", 0)).toThrow("Not a Done event");
+    expect(() => reopenTask(doc, "it-aaaa", 9)).toThrow("Not a Done event");
+  });
+});
+
+describe("setInfo", () => {
+  it("replaces lines, keeping formats and sub-lines of the first ones", () => {
+    const doc = parse("- [ ] A ^it-aaaa\n\t* **Do**\n\t* one\n\t\t- sub\n\t* two\n\t\t- gone\n", { today: "2026-11-01" });
+    setInfo(doc, "it-aaaa", ["uno"]);
+    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t* **Do**\n\t* uno\n\t\t- sub\n");
+  });
+
+  it("derives the format for extra lines and can clear all lines", () => {
+    const doc = parse("- [ ] A ^it-aaaa\n\t* **Do**\n", { today: "2026-11-01" });
+    setInfo(doc, "it-aaaa", ["a", "b"]);
+    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t* **Do**\n\t* a\n\t* b\n");
+    setInfo(doc, "it-aaaa", []);
+    expect(serialize(doc)).toBe("- [ ] A ^it-aaaa\n\t* **Do**\n");
   });
 });
 
@@ -382,8 +466,8 @@ describe("unknown ids", () => {
     expect(() => setStatus(doc, "it-nope", "x")).toThrow("Item not found: it-nope");
     expect(() => addEvent(doc, "it-nope", "x")).toThrow("Item not found: it-nope");
     expect(() => touch(doc, "it-nope")).toThrow("Item not found: it-nope");
-    expect(() => setTask(doc, "it-nope", "x")).toThrow("Item not found: it-nope");
-    expect(() => addFact(doc, "it-nope", "x")).toThrow("Item not found: it-nope");
+    expect(() => addTask(doc, "it-nope", "x")).toThrow("Item not found: it-nope");
+    expect(() => addInfo(doc, "it-nope", "x")).toThrow("Item not found: it-nope");
     expect(() => rename(doc, "it-nope", "x")).toThrow("not found: it-nope");
   });
 });

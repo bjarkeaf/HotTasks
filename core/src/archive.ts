@@ -154,7 +154,7 @@ function isArchivable(item: Item, today: string): boolean {
 }
 
 function eventFormat(item: Item): LineFormat {
-  const last = [...item.events, ...item.facts, ...(item.task ? [item.task] : [])]
+  const last = [...item.events, ...item.info, ...item.tasks]
     .reverse()
     .find((x) => x.format.marker !== "");
   return last ? last.format : { indent: `${item.format.indent}\t`, marker: "-" };
@@ -223,7 +223,8 @@ export function sweep(doc: Document, archiveText: string, opts: SweepOptions): S
       checkbox: item.checkbox,
       name: item.name,
       lane: item.lane,
-      facts: [],
+      tasks: [],
+      info: [],
       events: removed
     };
     const lines = deindent(renderLines(head).slice(1), removed[0]!.format.indent);

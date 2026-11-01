@@ -29,11 +29,11 @@ describe("parse canonical", () => {
     expect(findItem(doc, "it-2m8c")!.item.status).toBeUndefined();
   });
 
-  it("reads task, facts and events in order", () => {
+  it("reads tasks, info and events in order", () => {
     const it9 = findItem(doc, "it-9q7d")!.item;
-    expect(it9.task?.text).toBe("Follow up with Ronen");
-    expect(it9.task?.notBefore).toEqual({ date: "2026-11-02" });
-    expect(it9.facts.map((f) => f.text)).toEqual(["Needs 'NPR released in PDP' set before it can promote"]);
+    expect(it9.tasks[0]?.text).toBe("Follow up with Ronen");
+    expect(it9.tasks[0]?.notBefore).toEqual({ date: "2026-11-02" });
+    expect(it9.info.map((f) => f.text)).toEqual(["Needs 'NPR released in PDP' set before it can promote"]);
     expect(it9.events.map((e) => e.text)).toEqual([
       "Reminded Ronen",
       "Shani reminded to sign for T2P_Change_Analyst",
@@ -48,15 +48,15 @@ describe("parse canonical", () => {
     expect(lazy.at).toEqual({ date: "2026-10-15", time: "15:17" });
   });
 
-  it("keeps sub-bullets under a fact verbatim", () => {
+  it("keeps sub-bullets under an info line verbatim", () => {
     const alt = findItem(doc, "it-2m8c")!.item;
-    expect(alt.facts[0]!.children).toEqual(["\t\t\t- Email thread from 2026-10-13"]);
+    expect(alt.info[0]!.children).toEqual(["\t\t\t- Email thread from 2026-10-13"]);
   });
 
   it("reads a top-level item with no workstream", () => {
     const lab = findItem(doc, "it-7x1a")!;
     expect(lab.workstream).toBeUndefined();
-    expect(lab.item.task?.text).toBe("Follow up with Brian in person");
+    expect(lab.item.tasks[0]?.text).toBe("Follow up with Brian in person");
     expect(lab.item.events[0]!.at).toEqual({ date: "2026-10-14", time: "08:00" });
   });
 
@@ -84,8 +84,8 @@ describe("parse rules", () => {
     const doc = parse("* Lab PCs\n\t* **Follow up**\n\t* Request sent\n");
     const item = [...items(doc)][0]!.item;
     expect(item.checkbox).toBe(false);
-    expect(item.task?.text).toBe("Follow up");
-    expect(item.facts.map((f) => f.text)).toEqual(["Request sent"]);
+    expect(item.tasks[0]?.text).toBe("Follow up");
+    expect(item.info.map((f) => f.text)).toEqual(["Request sent"]);
     expect(serialize(doc)).toBe("* [ ] Lab PCs\n\t* **Follow up**\n\t* Request sent\n");
   });
 
@@ -96,14 +96,23 @@ describe("parse rules", () => {
     const kids = [...items(doc)];
     expect(kids.map((e) => e.item.name)).toEqual(["ECO-1", "Plate"]);
     expect(kids[0]!.item.status).toBe("Review");
-    expect(kids[1]!.item.facts[0]!.text).toBe("Only preliminary");
+    expect(kids[1]!.item.info[0]!.text).toBe("Only preliminary");
   });
 
-  it("keeps a second bold line as a fact", () => {
-    const doc = parse("- [ ] A\n\t- **First**\n\t- **Second**\n");
+  it("reads every bold line before the first event as a task", () => {
+    const doc = parse("- [ ] A\n\t- **First** @2026-11-05\n\t- **Second**\n\t- note\n\t- @2026-11-01 10:00 Started\n\t- **Third**\n");
     const item = [...items(doc)][0]!.item;
-    expect(item.task?.text).toBe("First");
-    expect(item.facts[0]!.text).toBe("**Second**");
+    expect(item.tasks.map((t) => t.text)).toEqual(["First", "Second"]);
+    expect(item.tasks[0]!.notBefore).toEqual({ date: "2026-11-05" });
+    expect(item.info.map((f) => f.text)).toEqual(["note"]);
+    expect(item.events.map((e) => e.text)).toEqual(["Started", "**Third**"]);
+  });
+
+  it("round-trips an item with three tasks", () => {
+    const text = "- [ ] A ^it-aaaa\n\t- **One**\n\t\t- sub\n\t- **Two** @2026-11-05\n\t- **Three**\n\t- info\n\t- @2026-11-01 10:00 Started\n";
+    const doc = parse(text, { today: "2026-11-01" });
+    expect([...items(doc)][0]!.item.tasks).toHaveLength(3);
+    expect(serialize(doc)).toBe(text);
   });
 
   it("preserves CRLF and a missing trailing newline", () => {

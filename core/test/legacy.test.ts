@@ -34,7 +34,7 @@ describe("extractLegacyTimestamp", () => {
 });
 
 describe("migrateLegacyText", () => {
-  it("converts a legacy item: task first, dated lines become events, the rest facts", () => {
+  it("converts a legacy item: task first, dated lines become events, the rest info", () => {
     const legacy = [
       "* Cable - HAR002731",
       "\t* Amphenol MCO-042215: *Engineering*",

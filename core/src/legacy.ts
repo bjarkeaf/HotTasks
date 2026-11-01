@@ -1,4 +1,4 @@
-import type { Document, Event, Fact, Item, Timestamp } from "./model.js";
+import type { Document, Event, Info, Item, Timestamp } from "./model.js";
 import { items, workstreams } from "./model.js";
 import { parse } from "./parse.js";
 import { serialize } from "./serialize.js";
@@ -64,8 +64,8 @@ function stripBold(name: string): string {
 }
 
 function reclassify(item: Item, noteDate: string): void {
-  const lines: Array<Fact | Event> = [...item.facts, ...item.events];
-  const facts: Fact[] = [];
+  const lines: Array<Info | Event> = [...item.info, ...item.events];
+  const info: Info[] = [];
   const events: Event[] = [];
   let last: Timestamp | undefined;
   for (const line of lines) {
@@ -75,21 +75,21 @@ function reclassify(item: Item, noteDate: string): void {
       last = at;
       events.push({ format: line.format, text, at, explicit: true, children: line.children });
     } else if (events.length === 0) {
-      facts.push({ format: line.format, text, children: line.children });
+      info.push({ format: line.format, text, children: line.children });
     } else {
       const ev: Event = { format: line.format, text, explicit: false, children: line.children };
       if (last) ev.at = last;
       events.push(ev);
     }
   }
-  item.facts = facts;
+  item.info = info;
   item.events = events;
   item.name = stripBold(item.name);
-  if (item.task) {
-    const m = /^(.*?)(?:\s+(?:on\s+)?)?\b(\d{4}-\d{2}-\d{2})\b\s*$/.exec(item.task.text);
-    if (m && !item.task.notBefore) {
-      item.task.text = m[1]!.replace(/[(,\s]+$/, "").trim();
-      item.task.notBefore = { date: m[2]! };
+  for (const task of item.tasks) {
+    const m = /^(.*?)(?:\s+(?:on\s+)?)?\b(\d{4}-\d{2}-\d{2})\b\s*$/.exec(task.text);
+    if (m && !task.notBefore) {
+      task.text = m[1]!.replace(/[(,\s]+$/, "").trim();
+      task.notBefore = { date: m[2]! };
     }
   }
 }

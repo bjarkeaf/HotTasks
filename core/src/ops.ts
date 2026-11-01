@@ -1,4 +1,4 @@
-import type { Document, Event, Fact, Item, Lane, LineFormat, Node, Task, Timestamp, Workstream } from "./model.js";
+import type { Document, Event, Info, Item, Lane, LineFormat, Node, Task, Timestamp, Workstream } from "./model.js";
 import { findItem, findWorkstream, newId, timestampFromDate, usedIds } from "./model.js";
 import { parse } from "./parse.js";
 
@@ -34,7 +34,7 @@ function indentUnit(indent: string): string {
 
 /** Format for a new line directly under an item, copied from an existing child where there is one. */
 function childFormat(item: Item): LineFormat {
-  const existing = item.task?.format ?? item.facts.find((f) => f.format.marker !== "")?.format ?? item.events[0]?.format;
+  const existing = item.tasks[0]?.format ?? item.info.find((f) => f.format.marker !== "")?.format ?? item.events[0]?.format;
   if (existing) return { ...existing };
   return { indent: item.format.indent + indentUnit(item.format.indent), marker: item.format.marker };
 }
@@ -63,15 +63,15 @@ function reindentLine(line: string, from: string, to: string): string {
 /** Replaces the leading `from` of every line of the item with `to`, so the whole subtree moves together. */
 function reindentItem(item: Item, from: string, to: string): void {
   if (from === to) return;
-  const shift = (parts: Array<Task | Fact | Event>) => {
+  const shift = (parts: Array<Task | Info | Event>) => {
     for (const p of parts) {
       if (p.format.marker !== "") p.format.indent = reindentIndent(p.format.indent, from, to);
       p.children = p.children.map((line) => reindentLine(line, from, to));
     }
   };
   item.format.indent = reindentIndent(item.format.indent, from, to);
-  if (item.task) shift([item.task]);
-  shift(item.facts);
+  shift(item.tasks);
+  shift(item.info);
   shift(item.events);
 }
 
@@ -114,24 +114,88 @@ export function touch(doc: Document, id: string, now: Date = new Date()): Event 
   return addEvent(doc, id, "Touched", undefined, now);
 }
 
-export function setTask(doc: Document, id: string, text: string, notBefore?: Timestamp): Task | undefined {
-  const item = requireItem(doc, id);
-  const body = text.trim();
-  if (body === "") {
-    delete item.task;
-    return undefined;
-  }
-  const task: Task = { format: item.task?.format ?? childFormat(item), text: body, children: item.task?.children ?? [] };
-  if (notBefore) task.notBefore = notBefore;
-  item.task = task;
+function requireTask(item: Item, index: number): Task {
+  const task = item.tasks[index];
+  if (!task) throw new Error(`Task not found: ${item.id ?? item.name} #${index}`);
   return task;
 }
 
-export function addFact(doc: Document, id: string, text: string): Fact {
+export function addTask(doc: Document, id: string, text: string, notBefore?: Timestamp): Task {
   const item = requireItem(doc, id);
-  const fact: Fact = { format: childFormat(item), text, children: [] };
-  item.facts.push(fact);
-  return fact;
+  const last = item.tasks[item.tasks.length - 1];
+  const task: Task = { format: last ? { ...last.format } : childFormat(item), text: text.trim(), children: [] };
+  if (notBefore) task.notBefore = notBefore;
+  item.tasks.push(task);
+  return task;
+}
+
+/** Empty text removes the task. `notBefore` is cleared when omitted. */
+export function editTask(doc: Document, id: string, index: number, text: string, notBefore?: Timestamp): Task | undefined {
+  const item = requireItem(doc, id);
+  const task = requireTask(item, index);
+  const body = text.trim();
+  if (body === "") {
+    item.tasks.splice(index, 1);
+    return undefined;
+  }
+  task.text = body;
+  if (notBefore) task.notBefore = notBefore;
+  else delete task.notBefore;
+  return task;
+}
+
+export function removeTask(doc: Document, id: string, index: number): void {
+  const item = requireItem(doc, id);
+  requireTask(item, index);
+  item.tasks.splice(index, 1);
+}
+
+const DONE_PREFIX = "Done: ";
+
+/** The task's own sub-lines move onto the new event. */
+export function completeTask(doc: Document, id: string, index: number, now: Date = new Date()): Event {
+  const item = requireItem(doc, id);
+  const task = requireTask(item, index);
+  item.tasks.splice(index, 1);
+  const event = appendEvent(item, `${DONE_PREFIX}${task.text}`, timestampFromDate(now));
+  event.children = task.children;
+  return event;
+}
+
+export function reopenTask(doc: Document, id: string, eventIndex: number): Task {
+  const item = requireItem(doc, id);
+  const event = item.events[eventIndex];
+  if (!event || !event.text.startsWith(DONE_PREFIX)) throw new Error(`Not a Done event: ${item.id ?? item.name} #${eventIndex}`);
+  item.events.splice(eventIndex, 1);
+  // A following event without its own stamp would otherwise inherit from the one before.
+  const next = item.events[eventIndex];
+  if (next && !next.explicit && event.at) {
+    next.explicit = true;
+    next.at = event.at;
+  }
+  const last = item.tasks[item.tasks.length - 1];
+  const task: Task = { format: last ? { ...last.format } : childFormat(item), text: event.text.slice(DONE_PREFIX.length), children: event.children };
+  item.tasks.push(task);
+  return task;
+}
+
+export function addInfo(doc: Document, id: string, text: string): Info {
+  const item = requireItem(doc, id);
+  const info: Info = { format: childFormat(item), text, children: [] };
+  item.info.push(info);
+  return info;
+}
+
+/** Replaces all info lines. The first lines keep their format and sub-lines, extra lines take the usual child format. */
+export function setInfo(doc: Document, id: string, lines: string[]): Info[] {
+  const item = requireItem(doc, id);
+  const fallback = childFormat(item);
+  const old = item.info;
+  item.info = lines.map((text, i): Info => {
+    const prev = old[i];
+    return prev ? { format: prev.format, text, children: prev.children } : { format: { ...fallback }, text, children: [] };
+  });
+  return item.info;
 }
 
 export function rename(doc: Document, id: string, name: string): void {
@@ -141,7 +205,7 @@ export function rename(doc: Document, id: string, name: string): void {
 }
 
 function newItem(format: LineFormat, name: string, id: string | undefined, lane: Lane): Item {
-  const item: Item = { kind: "item", format, checkbox: true, name, lane, facts: [], events: [] };
+  const item: Item = { kind: "item", format, checkbox: true, name, lane, tasks: [], info: [], events: [] };
   if (id !== undefined) item.id = id;
   return item;
 }

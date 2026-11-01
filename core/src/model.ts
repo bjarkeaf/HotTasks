@@ -19,7 +19,7 @@ export interface Task {
   children: string[];
 }
 
-export interface Fact {
+export interface Info {
   format: LineFormat;
   text: string;
   children: string[];
@@ -46,8 +46,8 @@ export interface Item {
   lane: Lane;
   /** Non-bullet lines directly under the item line, kept verbatim. */
   lead?: string[];
-  task?: Task;
-  facts: Fact[];
+  tasks: Task[];
+  info: Info[];
   events: Event[];
 }
 

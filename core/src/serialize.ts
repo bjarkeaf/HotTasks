@@ -1,4 +1,4 @@
-import type { Document, Event, Fact, Item, Lane, Node, Task, Timestamp, Workstream } from "./model.js";
+import type { Document, Event, Info, Item, Lane, Node, Task, Timestamp, Workstream } from "./model.js";
 
 function box(lane: Lane): string {
   switch (lane) {
@@ -28,7 +28,7 @@ function taskLines(t: Task, out: string[]): void {
   out.push(line, ...t.children);
 }
 
-function factLines(f: Fact, out: string[]): void {
+function infoLines(f: Info, out: string[]): void {
   out.push(`${f.format.indent}${f.format.marker} ${f.text}`, ...f.children);
 }
 
@@ -41,8 +41,8 @@ function eventLines(e: Event, out: string[]): void {
 function itemLines(it: Item, out: string[]): void {
   out.push(`${it.format.indent}${it.format.marker} ${box(it.lane)} ${head(it.name, it.status, it.id)}`.trimEnd());
   if (it.lead) out.push(...it.lead);
-  if (it.task) taskLines(it.task, out);
-  for (const f of it.facts) factLines(f, out);
+  for (const t of it.tasks) taskLines(t, out);
+  for (const f of it.info) infoLines(f, out);
   for (const e of it.events) eventLines(e, out);
 }
 

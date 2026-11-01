@@ -1,5 +1,5 @@
 import type { Item, Lane, Timestamp, Workstream } from "./model.js";
-import { timestampFromDate, timestampToMillis } from "./model.js";
+import { compareTimestamps, timestampFromDate, timestampToMillis } from "./model.js";
 
 export interface HeatThresholds {
   hotMs: number;
@@ -41,7 +41,10 @@ export function itemHeat(item: Item, now: Date, opts: HeatOptions = {}): Heat {
   if (isTerminal(item, opts)) return { state: "terminal" };
 
   const nowMs = now.getTime();
-  const notBefore = item.task?.notBefore;
+  let notBefore: Timestamp | undefined;
+  for (const t of item.tasks) {
+    if (t.notBefore && (!notBefore || compareTimestamps(t.notBefore, notBefore) < 0)) notBefore = t.notBefore;
+  }
   // A date-only timestamp means end of day elsewhere, but parking lasts only until the day starts.
   if (notBefore && nowMs < startOfDay(notBefore.date)) {
     return { state: "parked", parkedUntil: { date: notBefore.date } };
