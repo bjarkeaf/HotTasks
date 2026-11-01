@@ -193,8 +193,12 @@ export class HotTasksPane extends ItemView {
       this.render();
     };
     pane.addEventListener("mousedown", (e) => dropFocus(e.target as Element), true);
-    pane.addEventListener("focusout", (e) => {
-      if (!(e.relatedTarget instanceof Node) || !pane.contains(e.relatedTarget)) dropFocus(null);
+    pane.addEventListener("focusout", () => {
+      // A redraw removes the focused element and fires this too, so wait and see where the focus really went.
+      window.setTimeout(() => {
+        const active = document.activeElement;
+        if (active && active !== document.body && !pane.contains(active)) dropFocus(null);
+      }, 0);
     });
 
     const footer = h("div", "footer", undefined, pane);
