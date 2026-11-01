@@ -1,23 +1,35 @@
 import { MarkdownView, Notice, Plugin } from "obsidian";
 import type { Editor, MarkdownFileInfo } from "obsidian";
 import type { Lane, Settings } from "@hottasks/core";
-import { Store, addEvent, setLane, touch, withDefaults } from "@hottasks/core";
+import { DEFAULT_SETTINGS, Store, addEvent, setLane, touch, withDefaults } from "@hottasks/core";
 import { itemAtLine } from "./cursor";
 import { heatDecorations, refreshEditors } from "./decorations";
 import { HistoryModal, TextModal } from "./modals";
+import { HotTasksPane } from "./pane";
+import type { PaneHost, Prefs } from "./pane-state";
+import { VIEW_TYPE, readPrefs } from "./pane-state";
 import { HotTasksSettingTab } from "./settings-tab";
 import { vaultFileSystem } from "./vault-fs";
 
 type Ctx = MarkdownView | MarkdownFileInfo;
 type Run = (store: Store, id: string, name: string) => void;
 
-export default class HotTasksPlugin extends Plugin {
+export default class HotTasksPlugin extends Plugin implements PaneHost {
   override settings: Settings = withDefaults({ folder: "0_Tasks" });
+  prefs: Prefs = readPrefs(undefined);
   store: Store | undefined;
+  private unsubscribe: (() => void) | undefined;
+  private prefsTimer: number | undefined;
 
   override async onload(): Promise<void> {
-    this.settings = withDefaults({ folder: "0_Tasks", ...((await this.loadData()) as Partial<Settings> | null) });
+    const data = (await this.loadData()) as (Partial<Settings> & Partial<Prefs>) | null;
+    this.prefs = readPrefs(data);
+    this.settings = withDefaults({ folder: "0_Tasks", ...pickSettings(data) });
     await this.openStore();
+
+    this.registerView(VIEW_TYPE, (leaf) => new HotTasksPane(leaf, this));
+    this.addRibbonIcon("flame", "Open HotTasks pane", () => void this.openPane());
+    this.addCommand({ id: "open-pane", name: "Open HotTasks pane", callback: () => void this.openPane() });
 
     this.addSettingTab(new HotTasksSettingTab(this.app, this));
     this.registerEditorExtension(heatDecorations(() => this.store));
@@ -62,22 +74,62 @@ export default class HotTasksPlugin extends Plugin {
   }
 
   override onunload(): void {
+    this.unsubscribe?.();
     this.store?.stopPolling();
+    window.clearTimeout(this.prefsTimer);
   }
 
   async updateSettings(patch: Partial<Settings>): Promise<void> {
     this.settings = withDefaults({ ...this.settings, ...patch });
-    await this.saveData(this.settings);
+    await this.persist();
     await this.openStore();
     refreshEditors(this.app);
   }
 
+  private async persist(): Promise<void> {
+    await this.saveData({ ...this.settings, ...this.prefs });
+  }
+
+  savePrefs(): void {
+    window.clearTimeout(this.prefsTimer);
+    this.prefsTimer = window.setTimeout(() => void this.persist(), 500);
+  }
+
   private async openStore(): Promise<void> {
-    this.store = await Store.open(this.settings, vaultFileSystem(this.app.vault.adapter));
+    this.unsubscribe?.();
+    const store = await Store.open(this.settings, vaultFileSystem(this.app.vault.adapter));
+    this.store = store;
+    this.unsubscribe = store.onChange(() => {
+      this.refreshPanes();
+      refreshEditors(this.app);
+    });
+    this.refreshPanes();
+  }
+
+  async reopenStore(): Promise<void> {
+    await this.openStore();
+  }
+
+  private refreshPanes(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
+      if (leaf.view instanceof HotTasksPane) leaf.view.render();
+    }
+  }
+
+  /** Shows the pane in the right sidebar, opening it first if needed. */
+  private async openPane(): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE)[0];
+    if (!leaf) {
+      leaf = workspace.getRightLeaf(false) ?? undefined;
+      await leaf?.setViewState({ type: VIEW_TYPE, active: true });
+    }
+    if (leaf) await workspace.revealLeaf(leaf);
   }
 
   /** Writes unsaved edits of the open tasks file so the store reads what the editor shows. */
-  private async flush(store: Store): Promise<void> {
+  async flush(store: Store | undefined = this.store): Promise<void> {
+    if (!store) return;
     for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
       if (leaf.view instanceof MarkdownView && leaf.view.file?.path === store.tasksPath) await leaf.view.save();
     }
@@ -111,4 +163,14 @@ export default class HotTasksPlugin extends Plugin {
     run(store, id, item.name);
     if (save) await store.save();
   }
+}
+
+/** The plugin data holds the backend settings and the pane's own preferences side by side. */
+function pickSettings(data: Partial<Settings> | null): Partial<Settings> {
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(DEFAULT_SETTINGS)) {
+    const value = (data as Record<string, unknown> | null)?.[key];
+    if (value !== undefined) out[key] = value;
+  }
+  return out as Partial<Settings>;
 }
