@@ -1,0 +1,22 @@
+{
+  "name": "@hottasks/obsidian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HotTasks editor frontend for Obsidian",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --outfile=dist/main.js --format=cjs --platform=browser --target=es2022 --sourcemap=inline --external:obsidian --external:electron --external:node:* --external:@codemirror/* --external:@lezer/*",
+    "dev": "esbuild src/main.ts --bundle --outfile=dist/main.js --format=cjs --platform=browser --target=es2022 --sourcemap=inline --external:obsidian --external:electron --external:node:* --external:@codemirror/* --external:@lezer/* --watch",
+    "install:vault": "node scripts/install-vault.js"
+  },
+  "dependencies": {
+    "@hottasks/core": "*"
+  },
+  "devDependencies": {
+    "@codemirror/state": "^6.5.0",
+    "@codemirror/view": "^6.36.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "latest"
+  }
+}

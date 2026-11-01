@@ -1,0 +1,9 @@
+{
+  "id": "hottasks",
+  "name": "HotTasks",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Follow-up tracker that colours each item by how long since you last touched it",
+  "author": "Bjarke Frederiksen",
+  "isDesktopOnly": true
+}
