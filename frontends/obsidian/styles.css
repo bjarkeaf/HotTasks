@@ -79,7 +79,7 @@ body.theme-dark {
 }
 
 /* Obsidian styles bare buttons and inputs, the pane and its floating menus start from a clean slate. */
-:where(.hottasks-pane, .hottasks-pop, .hottasks-menu) button {
+.hottasks-pane button:not(.hottasks-native), .hottasks-pop button:not(.hottasks-native), .hottasks-menu button:not(.hottasks-native) {
   font: inherit;
   color: inherit;
   background: none;
@@ -299,8 +299,8 @@ body.theme-dark {
 .hottasks-detail .hottasks-hint { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
 
 .hottasks-menu { position: fixed; z-index: 20; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: 6px; box-shadow: var(--shadow-s); padding: 4px; min-width: 200px; font-size: 13px; }
-.hottasks-menu button { display: block; width: 100%; text-align: left; padding: 5px 10px; border-radius: 4px; }
-.hottasks-menu button:hover { background: var(--background-modifier-hover); }
+.hottasks-menu button:not(.hottasks-box) { display: block; width: 100%; text-align: left; padding: 5px 10px; border-radius: 4px; border: 0; background: none; box-shadow: none; }
+.hottasks-menu button:not(.hottasks-box):hover { background: var(--background-modifier-hover); }
 .hottasks-menu button.hottasks-on::after { content: "✓"; float: right; color: var(--text-muted); }
 .hottasks-menu hr { border: 0; border-top: 1px solid var(--background-modifier-border); margin: 4px 0; }
 .hottasks-menu .hottasks-h { padding: 4px 10px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
