@@ -121,8 +121,20 @@ export default class HotTasksPlugin extends Plugin implements PaneHost {
   private async openPane(where: "sidebar" | "tab" = "sidebar"): Promise<void> {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE)[0];
+    // A pane that sits in a sidebar is moved when a tab is asked for, and the other way round.
+    if (leaf && (leaf.getRoot() === workspace.rootSplit) !== (where === "tab")) {
+      leaf.detach();
+      leaf = undefined;
+    }
     if (!leaf) {
-      leaf = (where === "tab" ? workspace.getLeaf("tab") : workspace.getRightLeaf(false)) ?? undefined;
+      if (where === "tab") {
+        // "tab" is relative to the active leaf, so point it at the main area first.
+        const main = workspace.getMostRecentLeaf(workspace.rootSplit);
+        if (main) workspace.setActiveLeaf(main, { focus: false });
+        leaf = workspace.getLeaf("tab");
+      } else {
+        leaf = workspace.getRightLeaf(false) ?? undefined;
+      }
       await leaf?.setViewState({ type: VIEW_TYPE, active: true });
     }
     if (leaf) await workspace.revealLeaf(leaf);
