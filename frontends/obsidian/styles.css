@@ -212,7 +212,7 @@ body.theme-dark {
 .hottasks-wstag { display: block; font-size: 11px; font-weight: 500; letter-spacing: .02em; color: var(--hottasks-ws-text); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hottasks-row .hottasks-name { display: block; min-width: 0; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hottasks-row .hottasks-name.hottasks-over { white-space: normal; overflow: visible; }
-.hottasks-row .hottasks-name.hottasks-over .hottasks-t { text-decoration: underline wavy var(--hottasks-warm); text-underline-offset: 3px; }
+.hottasks-row .hottasks-name.hottasks-over .hottasks-t { color: var(--text-muted); }
 .hottasks-row .hottasks-name .hottasks-t { font-weight: 500; }
 .hottasks-row .hottasks-name .hottasks-lane { margin-left: 6px; vertical-align: 1px; }
 .hottasks-card.hottasks-done .hottasks-name .hottasks-t { text-decoration: line-through; color: var(--text-muted); }
