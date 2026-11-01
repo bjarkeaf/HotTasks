@@ -79,7 +79,7 @@ body.theme-dark {
 }
 
 /* Obsidian styles bare buttons and inputs, the pane and its floating menus start from a clean slate. */
-.hottasks-pane button:not(.hottasks-native), .hottasks-pop button:not(.hottasks-native), .hottasks-menu button:not(.hottasks-native) {
+:where(.hottasks-pane, .hottasks-pop, .hottasks-menu) button {
   font: inherit;
   color: inherit;
   background: none;
