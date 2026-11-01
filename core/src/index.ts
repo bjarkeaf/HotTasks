@@ -4,3 +4,6 @@ export type { ParseOptions } from "./parse.js";
 export { serialize, formatTimestamp } from "./serialize.js";
 export * from "./heat.js";
 export * from "./settings.js";
+export * from "./ops.js";
+export * from "./archive.js";
+export * from "./history.js";
