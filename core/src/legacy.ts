@@ -69,10 +69,6 @@ function reclassify(item: Item, noteDate: string): void {
   const events: Event[] = [];
   let last: Timestamp | undefined;
   for (const line of lines) {
-    if (line.format.marker === "") {
-      facts.push(line as Fact);
-      continue;
-    }
     const explicitEvent = "explicit" in line && line.explicit;
     const { text, at } = explicitEvent ? { text: line.text, at: (line as Event).at } : extractLegacyTimestamp(line.text, noteDate);
     if (at) {

@@ -73,11 +73,11 @@ describe("parse rules", () => {
     expect(serialize(doc)).toBe("- [ ] Thing\n\t- @2026-11-01 09:05 Pinged\n");
   });
 
-  it("takes lane from a heading when the checkbox is open", () => {
-    const text = "## Task status\n- [ ] A\n### Not urgent tasks\n- [ ] B\n### Done\n- [ ] C\n- [>] D\n";
+  it("takes lane from a heading only when the bullet has no checkbox", () => {
+    const text = "## Task status\n- A\n### Not urgent tasks\n- B\n- [ ] B2\n### Done\n- C\n- [>] D\n";
     const doc = parse(text);
-    expect([...items(doc)].map((e) => e.item.lane)).toEqual(["now", "later", "done", "later"]);
-    expect(serialize(doc)).toBe("## Task status\n- [ ] A\n### Not urgent tasks\n- [>] B\n### Done\n- [x] C\n- [>] D\n");
+    expect([...items(doc)].map((e) => e.item.lane)).toEqual(["now", "later", "now", "done", "later"]);
+    expect(serialize(doc)).toBe("## Task status\n- [ ] A\n### Not urgent tasks\n- [>] B\n- [ ] B2\n### Done\n- [x] C\n- [>] D\n");
   });
 
   it("treats a plain bullet with a bold child as an item and adds a checkbox", () => {

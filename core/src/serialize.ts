@@ -18,7 +18,7 @@ export function formatTimestamp(ts: Timestamp): string {
 function head(name: string, status: string | undefined, id: string | undefined): string {
   let s = name;
   if (status !== undefined) s += `: *${status}*`;
-  if (id !== undefined) s += ` ^${id}`;
+  if (id !== undefined) s = s === "" ? `^${id}` : `${s} ^${id}`;
   return s;
 }
 
@@ -29,10 +29,6 @@ function taskLines(t: Task, out: string[]): void {
 }
 
 function factLines(f: Fact, out: string[]): void {
-  if (f.format.marker === "" && f.text === "") {
-    out.push(...f.children);
-    return;
-  }
   out.push(`${f.format.indent}${f.format.marker} ${f.text}`, ...f.children);
 }
 
@@ -43,7 +39,8 @@ function eventLines(e: Event, out: string[]): void {
 }
 
 function itemLines(it: Item, out: string[]): void {
-  out.push(`${it.format.indent}${it.format.marker} ${box(it.lane)} ${head(it.name, it.status, it.id)}`);
+  out.push(`${it.format.indent}${it.format.marker} ${box(it.lane)} ${head(it.name, it.status, it.id)}`.trimEnd());
+  if (it.lead) out.push(...it.lead);
   if (it.task) taskLines(it.task, out);
   for (const f of it.facts) factLines(f, out);
   for (const e of it.events) eventLines(e, out);

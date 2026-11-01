@@ -44,6 +44,8 @@ export interface Item {
   name: string;
   status?: string;
   lane: Lane;
+  /** Non-bullet lines directly under the item line, kept verbatim. */
+  lead?: string[];
   task?: Task;
   facts: Fact[];
   events: Event[];

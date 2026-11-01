@@ -1,9 +1,9 @@
-import type { Document } from "./model.js";
-import { timestampFromDate } from "./model.js";
+import type { Document, Item, Lane } from "./model.js";
+import { findItem, items, timestampFromDate } from "./model.js";
 import { parse } from "./parse.js";
 import { serialize } from "./serialize.js";
-import { ensureIds, rename as renameNode } from "./ops.js";
-import { renameInArchive, sweep as sweepDoc } from "./archive.js";
+import { addEvent, ensureIds, rename as renameNode } from "./ops.js";
+import { parseArchive, renameInArchive, sweep as sweepDoc } from "./archive.js";
 import type { SweepResult } from "./archive.js";
 import { history as historyOf } from "./history.js";
 import type { HistoryEvent } from "./history.js";
@@ -23,10 +23,22 @@ export interface FileSystem {
 export type ChangeSource = "save" | "disk";
 export type ChangeListener = (doc: Document, source: ChangeSource) => void;
 
+/** Thrown by save() when the file changed on disk since it was last read. The store has reloaded; redo the operation. */
+export class StoreConflict extends Error {
+  constructor() {
+    super("tasks.md changed on disk, the store reloaded it");
+    this.name = "StoreConflict";
+  }
+}
+
 function joinPath(folder: string, name: string): string {
   if (folder === "") return name;
   const sep = folder.includes("\\") && !folder.includes("/") ? "\\" : "/";
   return folder.endsWith(sep) ? folder + name : folder + sep + name;
+}
+
+function laneEvent(lane: Lane): string {
+  return lane === "done" ? "Done" : lane === "later" ? "Lane: Later" : "Lane: Now";
 }
 
 export class Store {
@@ -39,6 +51,8 @@ export class Store {
   private lastWritten: string;
   private lastMtime: number | undefined;
   private timer: ReturnType<typeof setInterval> | undefined;
+  private busy = false;
+  private sweptOn: string | undefined;
 
   private constructor(settings: Settings, fs: FileSystem, clock: () => Date, doc: Document, archiveText: string, text: string, mtime: number | undefined) {
     this.settings = settings;
@@ -68,6 +82,10 @@ export class Store {
     return joinPath(this.settings.folder, ARCHIVE_FILE);
   }
 
+  private get today(): string {
+    return timestampFromDate(this.clock(), false).date;
+  }
+
   onChange(listener: ChangeListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -77,24 +95,51 @@ export class Store {
     for (const l of this.listeners) l(this.doc, source);
   }
 
-  /** Writes tasks.md. Assigns missing IDs first and takes the daily snapshot when enabled. */
+  private archiveIds(): string[] {
+    return parseArchive(this.archiveText).map((e) => e.id);
+  }
+
+  /**
+   * Writes tasks.md. Assigns missing IDs first, takes the daily snapshot and runs the daily sweep.
+   * Refuses with StoreConflict if the file changed on disk since it was last read.
+   */
   async save(): Promise<void> {
-    ensureIds(this.doc);
+    if (await this.diskChanged()) {
+      await this.reloadIfChanged();
+      throw new StoreConflict();
+    }
+    this.busy = true;
+    try {
+      ensureIds(this.doc, undefined, this.archiveIds());
+      if (this.settings.snapshots) await this.snapshot();
+      if (this.sweptOn !== this.today) await this.runSweep();
+      await this.writeTasks();
+    } finally {
+      this.busy = false;
+    }
+    this.emit("save");
+  }
+
+  private async writeTasks(): Promise<void> {
     const text = serialize(this.doc);
-    if (this.settings.snapshots) await this.snapshot();
     if (text !== this.lastWritten || !(await this.fs.exists(this.tasksPath))) {
       await this.fs.write(this.tasksPath, text);
       this.lastWritten = text;
       this.lastMtime = await this.fs.mtime(this.tasksPath);
     }
-    this.emit("save");
+  }
+
+  private async diskChanged(): Promise<boolean> {
+    const mtime = await this.fs.mtime(this.tasksPath);
+    if (mtime === this.lastMtime) return false;
+    const text = await this.fs.read(this.tasksPath);
+    return text !== undefined && text !== this.lastWritten;
   }
 
   /** Copies the file as it was before today's first save into history/. */
   private async snapshot(): Promise<void> {
-    const date = timestampFromDate(this.clock(), false).date;
     const dir = joinPath(this.settings.folder, HISTORY_DIR);
-    const path = joinPath(dir, `tasks-${date}.md`);
+    const path = joinPath(dir, `tasks-${this.today}.md`);
     if (await this.fs.exists(path)) return;
     const current = await this.fs.read(this.tasksPath);
     if (current === undefined) return;
@@ -102,18 +147,55 @@ export class Store {
     await this.fs.write(path, current);
   }
 
-  /** Re-reads tasks.md if something else changed it. Returns true when the model was replaced. */
+  private async runSweep(): Promise<SweepResult> {
+    const result = sweepDoc(this.doc, this.archiveText, { today: this.today, keepEvents: this.settings.keepEvents });
+    this.doc = result.doc;
+    this.sweptOn = this.today;
+    if (result.archiveText !== this.archiveText) {
+      this.archiveText = result.archiveText;
+      await this.fs.write(this.archivePath, result.archiveText);
+    }
+    return result;
+  }
+
+  /**
+   * Re-reads tasks.md if something else changed it. Returns true when the model was replaced.
+   * Lane and status changes made by hand get the event the UI would have written.
+   */
   async reloadIfChanged(): Promise<boolean> {
+    if (this.busy) return false;
     const mtime = await this.fs.mtime(this.tasksPath);
     if (mtime === this.lastMtime) return false;
     const text = await this.fs.read(this.tasksPath);
+    if (this.busy) return false;
     this.lastMtime = mtime;
     if (text === undefined || text === this.lastWritten) return false;
-    const today = timestampFromDate(this.clock(), false).date;
-    this.doc = parse(text, { today });
+    const previous = this.doc;
+    this.doc = parse(text, { today: this.today });
     this.lastWritten = text;
+    const changed = this.recordHandEdits(previous);
     this.emit("disk");
+    if (changed) await this.save();
     return true;
+  }
+
+  private recordHandEdits(previous: Document): boolean {
+    const now = this.clock();
+    let changed = false;
+    for (const { item } of items(this.doc)) {
+      if (!item.id) continue;
+      const before = findItem(previous, item.id)?.item;
+      if (!before) continue;
+      if (before.lane !== item.lane && !endsWithEvent(item, laneEvent(item.lane))) {
+        addEvent(this.doc, item.id, laneEvent(item.lane), undefined, now);
+        changed = true;
+      }
+      if (before.status !== item.status && item.status !== undefined && !endsWithEvent(item, `Status: ${item.status}`)) {
+        addEvent(this.doc, item.id, `Status: ${item.status}`, undefined, now);
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   startPolling(intervalMs = 2000): void {
@@ -137,19 +219,29 @@ export class Store {
   }
 
   async sweep(): Promise<SweepResult> {
-    ensureIds(this.doc);
-    const today = timestampFromDate(this.clock(), false).date;
-    const result = sweepDoc(this.doc, this.archiveText, { today, keepEvents: this.settings.keepEvents });
-    this.doc = result.doc;
-    if (result.archiveText !== this.archiveText) {
-      this.archiveText = result.archiveText;
-      await this.fs.write(this.archivePath, result.archiveText);
+    if (await this.diskChanged()) {
+      await this.reloadIfChanged();
+      throw new StoreConflict();
     }
-    await this.save();
+    this.busy = true;
+    let result: SweepResult;
+    try {
+      ensureIds(this.doc, undefined, this.archiveIds());
+      result = await this.runSweep();
+      await this.writeTasks();
+    } finally {
+      this.busy = false;
+    }
+    this.emit("save");
     return result;
   }
 
   history(id: string): HistoryEvent[] {
     return historyOf(this.doc, this.archiveText, id);
   }
+}
+
+function endsWithEvent(item: Item, text: string): boolean {
+  const last = item.events[item.events.length - 1];
+  return last !== undefined && last.text.trim() === text;
 }

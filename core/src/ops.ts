@@ -92,7 +92,9 @@ export function setLane(doc: Document, id: string, lane: Lane, now: Date = new D
 /** Clearing the status writes no event, the vocabulary only has `Status: <text>`. */
 export function setStatus(doc: Document, id: string, status: string | undefined, now: Date = new Date()): void {
   const item = requireItem(doc, id);
-  const next = status === undefined || status.trim() === "" ? undefined : status.trim();
+  // Asterisks and underscores would break the italic marker on the line.
+  const cleaned = status?.replace(/[*_]/g, "").trim();
+  const next = cleaned === undefined || cleaned === "" ? undefined : cleaned;
   if (next === item.status) return;
   if (next === undefined) {
     delete item.status;
@@ -219,8 +221,10 @@ export function importBullet(doc: Document, text: string, parentId?: string, opt
   return node;
 }
 
-export function ensureIds(doc: Document, random?: () => number): number {
+/** `reserved` holds ids that must not be handed out again, such as those already in the archive. */
+export function ensureIds(doc: Document, random?: () => number, reserved?: Iterable<string>): number {
   const used = usedIds(doc);
+  if (reserved) for (const id of reserved) used.add(id);
   let count = 0;
   for (const node of doc.nodes) {
     if (node.kind === "workstream") {

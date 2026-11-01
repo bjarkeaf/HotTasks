@@ -78,11 +78,19 @@ Obsidian block ID syntax, a caret and a short string at the end of the line. Pre
 
 ### Headings
 
-Headings are allowed and ignored by the model, with one exception for compatibility with hand-written files: a `[ ]` item under a heading whose text contains "later" or "not urgent" is read as Later, and under a heading containing "done" is read as Done. On save the backend writes the lane into the checkbox and leaves the heading alone.
+Headings are allowed and ignored by the model, with one exception for compatibility with hand-written files: a plain bullet with no checkbox that turns out to be an item takes its lane from the heading above it, Later under a heading whose text contains "later" or "not urgent", Done under a heading containing "done". Once a line has a checkbox, the checkbox is the only source of lane, so `[ ]` always means Now. On save the backend writes the lane into the checkbox and leaves the heading alone.
+
+A heading ends the bullet tree above it. Blank lines and other non-bullet text do not, they stay attached to the bullet above them and are written back in place.
+
+### Type by ID
+
+A bullet whose ID starts with `ws-` is a workstream and one whose ID starts with `it-` is an item, whatever is under it. This keeps an empty workstream a workstream after a reload. The children rule above applies only to bullets without an ID.
 
 ### Round trip
 
-Parsing a file and serializing the result must give back the same file, apart from these normalisations: bare timestamps expanded, missing IDs added, lane written into the checkbox, and a checkbox added to a plain bullet that turned out to be an item. Unknown lines, blank lines and headings are preserved in place. Bullet markers (`-` or `*`), indentation characters and line endings are kept as found.
+Parsing a file and serializing the result must give back the same file, apart from these normalisations: bare timestamps expanded, missing IDs added, lane written into the checkbox, a checkbox added to a plain bullet that turned out to be an item, and the task moved to the first line under its item. Unknown lines, blank lines and headings are preserved in place. Bullet markers (`-` or `*`), indentation characters and line endings are kept as found, except that a file with mixed line endings is written with one. A checkbox on a line nested under an item is kept as text.
+
+Whitespace inside a line is not guaranteed: repeated spaces after a marker, trailing spaces, `[X]` for `[x]` and `_status_` for `*status*` are normalised.
 
 ## 3. Files
 
@@ -108,7 +116,7 @@ A `##` heading per day the backend archived something. A `###` heading per item,
 
 ## 4. Operations
 
-Every operation takes an item or workstream ID, edits the in-memory model, writes `tasks.md`, and where noted appends an event. Events written by operations use a fixed vocabulary so history can be read by machine.
+Every operation takes an item or workstream ID and edits the in-memory model, and where noted appends an event. Writing is the store's job: a frontend applies one or more operations and then calls `save()`. The store refuses to save over a file that changed on disk since it was read, reloads it instead and reports a conflict, so the frontend redoes the operation. Lane and status changes made by hand in the file get the same event the operation would have written, added by the store when it reloads. Events written by operations use a fixed vocabulary so history can be read by machine.
 
 | Operation | Effect | Event written |
 |---|---|---|
@@ -128,7 +136,7 @@ Every operation takes an item or workstream ID, edits the in-memory model, write
 
 ## 5. Housekeeping
 
-`sweep()` runs on first save of each day and on demand.
+`sweep()` runs on the first save of each day in a session and on demand.
 
 1. Archive every item whose lane is Done and whose Done event is older than today.
 2. For every remaining item, move events beyond the newest N to the archive. N is a setting, default 3. Facts and the task are never trimmed.

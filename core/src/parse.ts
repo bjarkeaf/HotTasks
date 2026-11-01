@@ -8,8 +8,8 @@ export interface ParseOptions {
 
 const BULLET = /^([ \t]*)([-*+])[ \t]+(.*)$/;
 const HEADING = /^#{1,6}[ \t]/;
-const CHECKBOX = /^\[( |>|x|X)\][ \t]+(.*)$/;
-const TRAILING_ID = /[ \t]+\^((?:ws|it)-[a-z0-9]{4})[ \t]*$/;
+const CHECKBOX = /^\[( |>|x|X)\](?:[ \t]+(.*))?$/;
+const TRAILING_ID = /(?:^|[ \t]+)\^((?:ws|it)-[a-z0-9]{4})[ \t]*$/;
 const TRAILING_STATUS = /^(.*?):[ \t]+(?:\*([^*]+)\*|_([^_]+)_)[ \t]*$/;
 const BOLD_LINE = /^\*\*(.+?)\*\*(?:[ \t]+@(\d{4}-\d{2}-\d{2}))?[ \t]*$/;
 const FULL_STAMP = /^@(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}:\d{2}))?(?:[ \t]+(.*))?$/;
@@ -43,33 +43,52 @@ function laneFromHeading(text: string): Lane {
   return "now";
 }
 
+/** A checkbox is authoritative. Only a bullet with no checkbox takes its lane from the heading above it. */
 function laneFromCheckbox(box: string | undefined, context: Lane): Lane {
   if (box === "x" || box === "X") return "done";
   if (box === ">") return "later";
-  return context;
+  if (box === undefined) return context;
+  return "now";
 }
 
 /** Splits the file into top-level groups: either a bullet tree or a single opaque line. */
 function group(lines: string[]): Array<RawBullet | string> {
   const out: Array<RawBullet | string> = [];
   let stack: RawBullet[] = [];
+  // Blank lines wait until the next line shows whether they sit inside a tree or after it.
+  let pending: string[] = [];
+  const flushInside = () => {
+    if (pending.length === 0) return;
+    stack[stack.length - 1]!.loose.push(...pending);
+    pending = [];
+  };
+  const flushOutside = () => {
+    out.push(...pending);
+    pending = [];
+  };
   for (const line of lines) {
     const m = BULLET.exec(line);
-    if (!m || HEADING.test(line) || line.trim() === "") {
-      if (line.trim() === "" || HEADING.test(line) || stack.length === 0) {
+    if (!m || HEADING.test(line)) {
+      if (HEADING.test(line) || stack.length === 0) {
+        flushOutside();
         out.push(line);
         stack = [];
+      } else if (line.trim() === "") {
+        pending.push(line);
       } else {
+        flushInside();
         stack[stack.length - 1]!.loose.push(line);
       }
       continue;
     }
     const [, indent, marker, rest] = m as unknown as [string, string, string, string];
     const width = indentWidth(indent);
+    if (stack.length > 0 && width > 0 && width > stack[0]!.width) flushInside();
+    else flushOutside();
     const cb = CHECKBOX.exec(rest);
     const bullet: RawBullet = {
       format: { indent, marker },
-      text: cb ? cb[2]! : rest,
+      text: cb ? (cb[2] ?? "") : rest,
       width,
       bullets: [],
       loose: []
@@ -80,6 +99,7 @@ function group(lines: string[]): Array<RawBullet | string> {
     else stack[stack.length - 1]!.bullets.push(bullet);
     stack.push(bullet);
   }
+  flushOutside();
   return out;
 }
 
@@ -138,9 +158,22 @@ function buildItem(b: RawBullet, context: Lane, today: string): Item {
   if (head.id) item.id = head.id;
   if (head.status !== undefined) item.status = head.status;
 
+  if (b.loose.length > 0) item.lead = b.loose;
+
   let lastStamp: Timestamp | undefined;
   for (const c of b.bullets) {
     const children = rawChildren(c);
+    if (c.checkbox !== undefined) {
+      // A checkbox nested under an item is kept as text so nothing is lost.
+      const text = `[${c.checkbox}] ${c.text}`.trimEnd();
+      if (item.events.length === 0) item.facts.push({ format: c.format, text, children });
+      else {
+        const ev: Event = { format: c.format, text, explicit: false, children };
+        if (lastStamp) ev.at = lastStamp;
+        item.events.push(ev);
+      }
+      continue;
+    }
     const bold = BOLD_LINE.exec(c.text);
     if (bold && !item.task && item.events.length === 0) {
       const task: Task = { format: c.format, text: bold[1]!, children };
@@ -174,11 +207,6 @@ function buildItem(b: RawBullet, context: Lane, today: string): Item {
       item.events.push(ev);
     }
   }
-  if (b.loose.length > 0) {
-    // Loose lines directly under the item line are kept at the front of the facts.
-    const fact: Fact = { format: { indent: "", marker: "" }, text: "", children: b.loose };
-    item.facts.unshift(fact);
-  }
   return item;
 }
 
@@ -194,6 +222,9 @@ function buildWorkstream(b: RawBullet, context: Lane, today: string): Workstream
 
 function buildTop(b: RawBullet, context: Lane, today: string): Node {
   if (b.checkbox !== undefined) return buildItem(b, context, today);
+  const id = TRAILING_ID.exec(b.text)?.[1];
+  if (id?.startsWith("ws-")) return buildWorkstream(b, context, today);
+  if (id?.startsWith("it-")) return buildItem(b, context, today);
   if (b.bullets.some(isItemLike)) return buildWorkstream(b, context, today);
   return buildItem(b, context, today);
 }
@@ -202,8 +233,8 @@ export function parse(text: string, options: ParseOptions = {}): Document {
   const today = options.today ?? timestampFromDate(new Date(), false).date;
   const eol: "\n" | "\r\n" = text.includes("\r\n") ? "\r\n" : "\n";
   const trailingNewline = text.endsWith("\n");
-  const body = trailingNewline ? text.slice(0, text.length - eol.length) : text;
-  const lines = body === "" ? [] : body.split(eol);
+  const body = text.endsWith("\r\n") ? text.slice(0, -2) : trailingNewline ? text.slice(0, -1) : text;
+  const lines = body === "" ? [] : body.split(/\r?\n/);
 
   const nodes: Node[] = [];
   let context: Lane = "now";
