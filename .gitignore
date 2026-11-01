@@ -38,3 +38,6 @@ docs/connectors/
 
 # Interactive mock with real item names, local only
 docs/mock/
+
+# Harness build output
+frontends/obsidian/test-harness/dist/

@@ -325,10 +325,13 @@ function buildDetail(ctx: Ctx, item: Item): HTMLElement {
   const info = h("div", lines.length ? "info editable" : "info editable empty", lines.length ? undefined : "Anything worth keeping with this item", detail);
   info.title = "Click to edit, one line per point. Links open on click.";
   // Rendered as Markdown so links work. Each line is its own paragraph, matching one bullet per line in the file.
-  if (lines.length) void MarkdownRenderer.render(ctx.host.app, lines.join("\n\n"), info, ctx.store.tasksPath, ctx.component);
+  // The render is asynchronous. It gets its own child, so a render that lands after the click started editing cannot write into the edit field.
+  if (lines.length) void MarkdownRenderer.render(ctx.host.app, lines.join("\n\n"), h("div", "infoview", undefined, info), ctx.store.tasksPath, ctx.component);
   info.addEventListener("click", (e) => {
     e.stopPropagation();
     if ((e.target as HTMLElement).closest("a")) return;
+    // A click inside the field being edited only places the caret. Clearing it here would empty the edit and save an empty block.
+    if (info.classList.contains(cx("live"))) return;
     info.replaceChildren();
     liveEdit(info, {
       value: lines.join("\n"),

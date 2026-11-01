@@ -190,7 +190,8 @@ export class HotTasksPane extends ItemView {
       if (keep?.closest(`.${cx("card")}[data-id="${id}"]`)) return;
       if (keep?.closest(`.${cx("pop")}, .${cx("menu")}`)) return;
       focusItem(null);
-      this.render();
+      // Redrawing on mousedown would remove the pressed element before its click fires, so the redraw waits for the click.
+      window.setTimeout(() => this.render(), 0);
     };
     pane.addEventListener("mousedown", (e) => dropFocus(e.target as Element), true);
     // Ctrl+Z undoes the last pane change whenever the pane is the active view, even if nothing inside it has keyboard focus.
