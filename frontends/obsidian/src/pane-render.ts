@@ -129,15 +129,11 @@ function buildHeader(ctx: Ctx, ws: Workstream | undefined, count: number): HTMLE
   return head;
 }
 
-/** The workstream's rolled-up lane and heat, from its open items. */
+/** The workstream's rolled-up lane, shown only when it is not Now. Heat is visible on the items themselves. */
 function rollupChips(ctx: Ctx, ws: Workstream, head: HTMLElement): void {
   if (!ws.children.some((c) => c.kind === "item")) return;
-  const { lane, heat } = rollup(ws, ctx.now, ctx.opts);
+  const { lane } = rollup(ws, ctx.now, ctx.opts);
   if (lane !== "now") h("span", "lane", LANE_NAMES[lane], head);
-  if (heat.state === "unknown" || heat.state === "terminal") return;
-  const label = heat.ageMs !== undefined ? formatAge(heat.ageMs) : "parked";
-  const chip = h("span", `wsheat ${heat.state}`, label, head);
-  chip.title = "Hottest open item";
 }
 
 function deleteWorkstream(ctx: Ctx, anchor: HTMLElement, ws: Workstream): void {

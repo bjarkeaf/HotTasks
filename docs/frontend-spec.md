@@ -16,7 +16,7 @@ For every item:
 For every workstream:
 
 - Name, in a colour that is stable for that workstream
-- Rolled-up lane and heat
+- Rolled-up lane when it is not Now. Rolled-up heat is not repeated on the header, the item blocks beneath already show it
 
 The heat colours come from the backend thresholds, so every frontend shows the same item the same colour.
 
