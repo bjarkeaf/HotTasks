@@ -160,7 +160,7 @@ Rules:
 
 - A task dated in the future parks the item. With several dated tasks the earliest date counts. Heat is reported as parked until that date, and from that date onward it is computed as if the item was touched at the start of that day.
 - A status change counts as a touch, because the matching event carries a timestamp.
-- An item with a terminal status does not report heat. Terminal statuses are a setting, default `Released`, `Rejected`, `Deleted`, `Cancelled`.
+- An item with a terminal status and no open tasks does not report heat. Terminal statuses are a setting, default `Released`, `Rejected`, `Deleted`, `Cancelled`. While a task is still open the item is followed up like any other, whatever its status.
 - An item with no timestamps at all reports heat as unknown.
 
 The backend exposes thresholds from settings, default hot under 24 hours, warm under 72 hours, cold beyond, so that frontends agree on colours. Frontends may show finer detail.

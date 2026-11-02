@@ -66,9 +66,11 @@ describe("itemHeat", () => {
     expect(itemHeat(findItem(doc, "it-aaaa")!.item, now)).toEqual({ state: "terminal" });
   });
 
-  it("terminal wins over a future task date", () => {
+  it("an open task keeps a terminal item alive", () => {
     const doc = parse(`- [ ] X: *Cancelled* ^it-aaaa\n\t- **Wait** @2026-12-01`, { today: "2026-11-01" });
-    expect(itemHeat(findItem(doc, "it-aaaa")!.item, now).state).toBe("terminal");
+    expect(itemHeat(findItem(doc, "it-aaaa")!.item, now).state).toBe("parked");
+    const doc2 = parse(`- [ ] X: *Released* ^it-bbbb\n\t- **Send RMR**\n\t- ${ago(1)} Status: Released`, { today: "2026-11-01" });
+    expect(itemHeat(findItem(doc2, "it-bbbb")!.item, now).state).toBe("hot");
   });
 
   it("honours custom terminal statuses", () => {

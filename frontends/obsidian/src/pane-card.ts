@@ -78,7 +78,8 @@ function doneToday(item: Item, now: Date): Array<{ ev: Event; i: number }> {
 function ageLabel(heat: Heat): string {
   if (heat.state === "unknown") return "no dates";
   if (heat.state === "parked") return "parked";
-  if (heat.state === "terminal" || heat.ageMs === undefined) return "";
+  if (heat.state === "terminal") return "closed";
+  if (heat.ageMs === undefined) return "";
   return formatAge(heat.ageMs);
 }
 

@@ -38,7 +38,8 @@ function isTerminal(item: Item, opts: HeatOptions): boolean {
 }
 
 export function itemHeat(item: Item, now: Date, opts: HeatOptions = {}): Heat {
-  if (isTerminal(item, opts)) return { state: "terminal" };
+  // A terminal status ends the follow-up only when nothing is left to do on the item.
+  if (isTerminal(item, opts) && item.tasks.length === 0) return { state: "terminal" };
 
   const nowMs = now.getTime();
   let notBefore: Timestamp | undefined;
