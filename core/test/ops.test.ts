@@ -11,6 +11,7 @@ import {
   completeTask,
   editTask,
   removeTask,
+  moveTask,
   reopenTask,
   setInfo,
   addItem,
@@ -212,6 +213,16 @@ describe("removeTask", () => {
     expect(out).not.toContain("Follow up with Alex");
     expect(out).toContain("\t- [ ] MCO-042063: *QA Review* ^it-9q7d\n\t\t- Needs 'NPR");
     expect(findItem(doc, "it-9q7d")!.item.events).toHaveLength(3);
+  });
+});
+
+describe("moveTask", () => {
+  it("reorders tasks and keeps everything else", () => {
+    const doc = parse("- [ ] X ^it-aaaa\n\t- **One**\n\t- **Two**\n\t- **Three**\n\t- Info\n\t- @2026-11-01 10:00 E", { today: "2026-11-01" });
+    moveTask(doc, "it-aaaa", 2, 0);
+    expect(serialize(doc)).toBe("- [ ] X ^it-aaaa\n\t- **Three**\n\t- **One**\n\t- **Two**\n\t- Info\n\t- @2026-11-01 10:00 E");
+    moveTask(doc, "it-aaaa", 0, 9);
+    expect(findItem(doc, "it-aaaa")!.item.tasks.map((t) => t.text)).toEqual(["One", "Two", "Three"]);
   });
 });
 

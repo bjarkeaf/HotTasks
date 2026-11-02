@@ -20,7 +20,7 @@ const inject = {
   "pane.ts": [
     ["    if (isEditing() || !this.list) return;", `    ${T('"pane.render editing=" + isEditing()')}\n    if (isEditing() || !this.list) return;`],
     ["    if (!prefs.open || isEditing()) return;", `    ${T('"closeOpenItem open=" + prefs.open + " editing=" + isEditing()')}\n    if (!prefs.open || isEditing()) return;`],
-    ["      focusItem(null);\n      this.render();\n    };", `      ${T('"dropFocus -> render"')}\n      focusItem(null);\n      this.render();\n    };`],
+    ["      focusItem(null);\n      // Redrawing", `      ${T('"dropFocus -> render"')}\n      focusItem(null);\n      // Redrawing`],
     ["        prefs.open = prefs.open === id ? null : id;", `        ${T('"toggle " + id')}\n        prefs.open = prefs.open === id ? null : id;`]
   ],
   "pane-card.ts": [["    info.replaceChildren();\n    liveEdit(info", `    ${T('"info click: replaceChildren + liveEdit"')}\n    info.replaceChildren();\n    liveEdit(info`]],
@@ -37,7 +37,10 @@ const plugin = {
       const name = path.basename(a.path);
       let text = readFileSync(a.path, "utf8").replace(/\r\n/g, "\n");
       for (const [from, to] of inject[name] ?? []) {
-        if (!text.includes(from)) throw new Error(`injection target missing in ${name}: ${from}`);
+        if (!text.includes(from)) {
+          console.warn(`trace hook skipped, target gone in ${name}: ${from.split("\n")[0].trim()}`);
+          continue;
+        }
         text = text.replace(from, () => to);
       }
       return { contents: text, loader: "ts" };

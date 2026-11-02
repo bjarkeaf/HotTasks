@@ -4,7 +4,7 @@ import type { Event, HeatOptions, Item, Store, Workstream } from "@hottasks/core
 import { findItem, addEvent, addTask, completeTask, editTask, formatAge, itemHeat, removeTask, reopenTask, setInfo, setLane, setStatus, timestampFromDate, timestampToMillis, touch } from "@hottasks/core";
 import type { Heat } from "@hottasks/core";
 import type { Actions } from "./pane-actions";
-import { itemSource } from "./pane-drag";
+import { itemSource, taskList } from "./pane-drag";
 import { editEvent, removeEvent } from "./pane-actions";
 import { LIMITS, alwaysEditable, confirmPopover, cx, fullTime, h, icon, isRendering, liveEdit, parseWhen, showTime } from "./pane-edit";
 import type { PaneHost } from "./pane-state";
@@ -266,6 +266,7 @@ function buildOpenTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
   const list = h("div", "tasks", undefined, main);
   item.tasks.forEach((_, i) => {
     const row = h("div", "tk", undefined, list);
+    row.dataset.task = String(i);
     checkbox(row, false, "Done, logs an event", () => {
       focusItem(id);
       ctx.actions.do((s) => void completeTask(s.doc, id, i));
@@ -280,6 +281,7 @@ function buildOpenTasks(ctx: Ctx, item: Item, main: HTMLElement): void {
     });
   });
   for (const { ev, i } of doneInFocus(item, ctx.now)) doneRow(ctx, item, ev, i, "tk pending", list);
+  if (item.tasks.length > 1) taskList(ctx, list, id);
 
   const add = h("div", "tk newtk", undefined, list);
   const done = checkbox(add, false, "Add and mark done at once", () => {

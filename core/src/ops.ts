@@ -150,6 +150,14 @@ export function removeTask(doc: Document, id: string, index: number): void {
   item.tasks.splice(index, 1);
 }
 
+/** Moves a task so it ends up at index `to` among the item's tasks. */
+export function moveTask(doc: Document, id: string, from: number, to: number): void {
+  const item = requireItem(doc, id);
+  const task = requireTask(item, from);
+  item.tasks.splice(from, 1);
+  item.tasks.splice(Math.max(0, Math.min(to, item.tasks.length)), 0, task);
+}
+
 const DONE_PREFIX = "Done: ";
 
 /** The task's own sub-lines move onto the new event. */

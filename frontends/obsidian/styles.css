@@ -315,6 +315,8 @@ body.theme-dark {
 .hottasks-dragging { opacity: .4; }
 .hottasks-dropline { height: 2px; background: var(--interactive-accent); margin: -1px 8px; border-radius: 1px; pointer-events: none; }
 .hottasks-group[draggable="true"] { cursor: grab; }
+.hottasks-tk[draggable="true"] { cursor: grab; }
+.hottasks-tasks .hottasks-dropline { margin: -1px 0; }
 
 /* Always-editable block: looks like text until it has the focus. */
 .hottasks-info.hottasks-field { white-space: pre-wrap; min-height: 1.5em; user-select: text; cursor: text; outline: none; border-bottom: 1px dashed transparent; }

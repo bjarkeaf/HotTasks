@@ -1,4 +1,4 @@
-import { findItem, moveItemAfter, moveWorkstreamAfter, workstreams } from "@hottasks/core";
+import { findItem, moveItemAfter, moveTask, moveWorkstreamAfter, workstreams } from "@hottasks/core";
 import type { Ctx } from "./pane-card";
 import { cx, h } from "./pane-edit";
 
@@ -7,7 +7,7 @@ import { cx, h } from "./pane-edit";
  * their lane and may only be dropped among boxes of the same lane section.
  */
 interface Drag {
-  kind: "item" | "ws";
+  kind: "item" | "ws" | "task";
   id: string;
   lane: string;
 }
@@ -128,6 +128,42 @@ export function dropZone(ctx: Ctx, box: HTMLElement, wsId: string | undefined, l
     const run = pending;
     if (!drag || !run) return;
     e.preventDefault();
+    clear();
+    run();
+  });
+}
+
+/**
+ * Tasks of an open item, dragged by their row and dropped among the other tasks of the same item.
+ * Rows carry their task index in `data-task`.
+ */
+export function taskList(ctx: Ctx, list: HTMLElement, itemId: string): void {
+  const rows = () => [...list.querySelectorAll<HTMLElement>(`[data-task]`)];
+  for (const row of rows()) source(row, row, { kind: "task", id: itemId, lane: `task:${row.dataset.task}` });
+  list.addEventListener("dragover", (e) => {
+    const d = drag;
+    if (!d || d.kind !== "task" || d.id !== itemId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    const from = Number(d.lane.slice(5));
+    const all = rows();
+    const before = all.find((r) => {
+      const b = r.getBoundingClientRect();
+      return e.clientY < b.top + b.height / 2;
+    });
+    const slot = before ? Number(before.dataset.task) : all.length;
+    // Index after the dragged task has been taken out.
+    const to = slot > from ? slot - 1 : slot;
+    if (to === from) return clear();
+    show(before ?? all[all.length - 1]!, before ? "before" : "after");
+    pending = () => ctx.actions.do((s) => moveTask(s.doc, itemId, from, to));
+  });
+  list.addEventListener("drop", (e) => {
+    const run = pending;
+    if (!drag || drag.kind !== "task" || !run) return;
+    e.preventDefault();
+    e.stopPropagation();
     clear();
     run();
   });

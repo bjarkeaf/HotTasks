@@ -129,6 +129,7 @@ Every operation takes an item or workstream ID and edits the in-memory model, an
 | `addTask(id, text, notBefore?)` | Appends a task | none |
 | `editTask(id, index, text, notBefore?)` | Changes a task, empty text removes it | none |
 | `removeTask(id, index)` | Removes a task without a trace | none |
+| `moveTask(id, from, to)` | Moves a task to a new position among the item's tasks | none |
 | `completeTask(id, index)` | Removes the task and records it | `Done: <task text>` |
 | `reopenTask(id, eventIndex)` | Deletes a `Done:` event and restores the task | none |
 | `addInfo(id, text)` / `setInfo(id, lines)` | Adds one info line, or replaces the whole block | none |
