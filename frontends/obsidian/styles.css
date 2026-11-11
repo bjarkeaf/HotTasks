@@ -323,3 +323,6 @@ body.theme-dark {
 .hottasks-info.hottasks-field:hover { border-bottom-color: var(--background-modifier-border); }
 .hottasks-info.hottasks-field:focus { border-bottom: 1px solid var(--interactive-accent); }
 .hottasks-info.hottasks-field:empty::after { content: attr(data-placeholder); color: var(--text-muted); font-style: italic; pointer-events: none; }
+
+/* Search hits, drawn by the CSS Custom Highlight API. */
+::highlight(hottasks-search) { background-color: rgba(201, 162, 79, .45); color: inherit; }

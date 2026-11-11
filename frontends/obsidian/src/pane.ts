@@ -6,6 +6,7 @@ import { HistoryModal } from "./modals";
 import { Actions } from "./pane-actions";
 import type { Ctx } from "./pane-card";
 import { focusItem, focusedItem, takeRefocus } from "./pane-card";
+import { highlightMatches } from "./pane-highlight";
 import { closeFloating, cx, dropdown, h, icon, inputPopover, isEditing, LIMITS, menuAt, menuHeading, menuItem, onFloatingDismiss, onOutsideMouseDown, onSwallowedClick, setRendering } from "./pane-edit";
 import { renderList, renderSummary } from "./pane-render";
 import type { PaneHost } from "./pane-state";
@@ -102,6 +103,7 @@ export class HotTasksPane extends ItemView {
     }
     const ctx = this.ctx(store);
     renderList(ctx, this.list);
+    highlightMatches(this.list, this.host.prefs.q);
     renderSummary(ctx, this.summary);
     const { lanes } = this.host.prefs;
     this.badge.textContent = lanes.length === 1 && lanes[0] === "now" ? "" : LANES.filter((l) => lanes.includes(l)).map((l) => l[0]!.toUpperCase()).join("");
