@@ -31,7 +31,43 @@ const TASKS = `## Task status
 		- Info of C
 		- @2026-10-31 12:00 Started C
 `;
-const files = new Map<string, string>([["tasks.md", TASKS]]);
+/** Made-up data for the README screenshot, stamped relative to now so every heat colour shows. */
+function demo(): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const at = (hoursAgo: number) => {
+    const d = new Date(Date.now() - hoursAgo * 3_600_000);
+    return `@${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  return `## Task status
+
+- Sensor board rev B ^ws-d001
+	- [ ] ECO-104233: *Second Review* ^it-d001
+		- **Chase remaining signers**
+		- Needs QA and Purchasing sign-off
+		- ${at(52)} Submitted for review
+		- ${at(3)} Reminded Purchasing in chat
+		- ${at(1.5)} Status: Second Review
+	- [ ] Stencil thickness ^it-d002
+		- **Confirm 120 um with assembly house**
+		- **Update fab notes**
+		- ${at(30)} Asked assembly house
+	- [ ] Connector second source ^it-d003
+		- **Request samples from Vendor B**
+		- ${at(150)} Datasheets compared
+- Test fixture ^ws-d002
+	- [ ] Pogo pin plate ^it-d004
+		- **Review drawing with mechanics**
+		- ${at(5)} Drawing received
+	- [ ] Fixture cable: *Released* ^it-d005
+		- **Order 10 pcs**
+		- ${at(96)} Status: Released
+- [ ] Lab PC upgrade ^it-d006
+	- **Follow up with IT on ticket**
+	- ${at(200)} Ticket opened
+`;
+}
+
+const files = new Map<string, string>([["tasks.md", params.has("demo") ? demo() : TASKS]]);
 (window as any).__files = files;
 const fs: FileSystem = {
   read: async (p) => files.get(p),
@@ -44,6 +80,10 @@ const fs: FileSystem = {
 void (async () => {
   const store = await Store.open(withDefaults({ snapshots: false }), fs);
   const prefs = defaultPrefs();
+  if (params.has("demo")) {
+    prefs.open = "it-d001";
+    prefs.wsHues = { "ws-d002": 25 };
+  }
   const host: any = {
     app: { workspace: {} },
     store,
