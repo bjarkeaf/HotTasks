@@ -80,7 +80,7 @@ Settled on the pane mock. The words used in the interface are the spec's: Workst
 - Default lane shown is Now alone. A lane menu offers checkboxes to combine lanes and a click on a lane name to show only that lane. When several lanes show, each is a section with a band heading. Done items are dimmed.
 - A workstream is a box: a left edge and tinted header in its colour, name, count, and on hover a plus to add an item and a cross to delete. Items without a workstream sit in a plain box at the end. Empty workstreams sit at the bottom, outside the lanes.
 - A row shows name and status on the first line, the task list beneath, the newest event beneath that as a quiet third line, and the heat block flush against the right edge spanning the row. The item cross sits at the top right of the row, left of the heat block, on hover.
-- Toolbar holds the name and three icons: add workstream, sort, lanes. Counts by heat and a search field live in a footer.
+- Toolbar holds the name, a search field (Escape clears it) and three icons: add workstream, sort, lanes. Counts by heat live in a footer.
 
 **Editing**
 

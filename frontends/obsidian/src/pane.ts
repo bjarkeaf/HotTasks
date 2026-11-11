@@ -148,6 +148,25 @@ export class HotTasksPane extends ItemView {
     h("span", "flame", undefined, title);
     title.append("HotTasks");
 
+    const search = h("div", "search", undefined, bar);
+    const q = h("input", "", undefined, search);
+    q.type = "search";
+    q.placeholder = "Search";
+    q.value = this.host.prefs.q;
+    q.setAttribute("aria-label", "Search");
+    const apply = () => {
+      this.host.prefs.q = q.value;
+      this.host.savePrefs();
+      this.render();
+    };
+    q.addEventListener("input", apply);
+    q.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      q.value = "";
+      apply();
+      q.blur();
+    });
+
     const addWs = this.toolButton(bar, "plus", "New workstream", 16);
     addWs.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -216,17 +235,6 @@ export class HotTasksPane extends ItemView {
 
     const footer = h("div", "footer", undefined, pane);
     this.summary = h("div", "summary", undefined, footer);
-    const search = h("div", "search", undefined, footer);
-    const q = h("input", "", undefined, search);
-    q.type = "search";
-    q.placeholder = "Search";
-    q.value = this.host.prefs.q;
-    q.setAttribute("aria-label", "Search");
-    q.addEventListener("input", () => {
-      this.host.prefs.q = q.value;
-      this.host.savePrefs();
-      this.render();
-    });
   }
 
   private toolButton(bar: HTMLElement, name: "plus" | "sort" | "filter", title: string, size: number): HTMLButtonElement {
