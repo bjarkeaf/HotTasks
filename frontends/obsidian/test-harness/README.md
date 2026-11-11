@@ -11,4 +11,4 @@ node run.mjs --trace --only=6  # print the handler trace for one scenario
 
 Exit code 1 and `LOST` lines mean the Info block did not survive. Needs Node 22+ and Edge at the default path.
 
-Screenshot for the README: `node build.mjs`, then open `demo.html?demo=1` (made-up data, light theme).
+Screenshot for the README: `node build.mjs`, then open `demo.html?demo=1` (made-up data, light theme, add `&theme=dark` for dark).
