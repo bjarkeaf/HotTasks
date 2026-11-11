@@ -156,17 +156,29 @@ export class HotTasksPane extends ItemView {
     q.placeholder = "Search";
     q.value = this.host.prefs.q;
     q.setAttribute("aria-label", "Search");
+    const clear = h("button", "clear", undefined, search);
+    clear.title = "Clear search";
+    clear.setAttribute("aria-label", "Clear search");
+    clear.appendChild(icon("x", 14));
     const apply = () => {
       this.host.prefs.q = q.value;
       this.host.savePrefs();
+      clear.hidden = q.value === "";
       this.render();
     };
+    clear.hidden = q.value === "";
     q.addEventListener("input", apply);
     q.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       q.value = "";
       apply();
       q.blur();
+    });
+    clear.addEventListener("click", (e) => {
+      e.stopPropagation();
+      q.value = "";
+      apply();
+      q.focus();
     });
 
     const addWs = this.toolButton(bar, "plus", "New workstream", 16);
